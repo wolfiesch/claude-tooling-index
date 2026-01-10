@@ -23,7 +23,7 @@ class SearchBar(Input):
             super().__init__()
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("placeholder", "Type to search...")
+        kwargs.setdefault("placeholder", "◉ Search components...")
         super().__init__(*args, **kwargs)
 
     def on_input_changed(self, event: Input.Changed) -> None:

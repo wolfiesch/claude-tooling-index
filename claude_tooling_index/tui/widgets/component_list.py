@@ -105,10 +105,10 @@ class ComponentList(DataTable):
     def _format_status(self, status: str) -> str:
         """Format status with emoji"""
         status_map = {
-            "active": "🟢 Active",
-            "disabled": "⚪ Disabled",
-            "error": "🔴 Error",
-            "unknown": "🟡 Unknown",
+            "active": "● Active",
+            "disabled": "○ Disabled",
+            "error": "✖ Error",
+            "unknown": "◐ Unknown",
         }
         return status_map.get(status, status)
 

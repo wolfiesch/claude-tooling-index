@@ -63,10 +63,16 @@ class StatsPanel(Static):
         mcps = len(scan_result.mcps)
         binaries = len(scan_result.binaries)
 
+        # Claude orange for numbers
+        orange = "#DA7756"
         self.update(
-            f"[bold]Total:[/bold] {total} | "
-            f"Skills: {skills} | Plugins: {plugins} | Commands: {commands} | "
-            f"Hooks: {hooks} | MCPs: {mcps} | Binaries: {binaries}"
+            f"[bold {orange}]◉[/bold {orange}] [bold]Total:[/bold] [{orange}]{total}[/{orange}]  "
+            f"│  Skills: [{orange}]{skills}[/{orange}]  "
+            f"│  Plugins: [{orange}]{plugins}[/{orange}]  "
+            f"│  Commands: [{orange}]{commands}[/{orange}]  "
+            f"│  Hooks: [{orange}]{hooks}[/{orange}]  "
+            f"│  MCPs: [{orange}]{mcps}[/{orange}]  "
+            f"│  Binaries: [{orange}]{binaries}[/{orange}]"
         )
 
 
@@ -74,7 +80,8 @@ class ToolingIndexTUI(App):
     """Terminal UI dashboard for Claude Code Tooling Index"""
 
     CSS_PATH = "styles.tcss"
-    TITLE = "Claude Code Tooling Index"
+    TITLE = "◉ Claude Code Tooling Index"
+    SUB_TITLE = "Component Dashboard"
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),

@@ -1,119 +1,325 @@
-/* Claude Tooling Index TUI Styles */
+/* Claude Code Tooling Index TUI Styles */
+/* Anthropic/Claude themed - warm orange tones on dark background */
 
-/* Main layout */
+/* =============================================================================
+   COLOR VARIABLES (Claude/Anthropic Theme)
+   ============================================================================= */
+
+$claude-orange: #DA7756;
+$claude-orange-dim: #B85F3E;
+$claude-orange-bright: #F0906A;
+$claude-peach: #FFECD4;
+$claude-dark: #1A1A1A;
+$claude-surface: #262626;
+$claude-surface-light: #333333;
+$claude-surface-lighter: #404040;
+$claude-text: #E8E8E8;
+$claude-text-dim: #999999;
+$claude-text-muted: #666666;
+$claude-border: #444444;
+$claude-success: #6EC177;
+$claude-warning: #E5C07B;
+$claude-error: #E06C75;
+
+/* =============================================================================
+   GLOBAL STYLES
+   ============================================================================= */
+
+Screen {
+    background: $claude-dark;
+    color: $claude-text;
+}
+
+/* =============================================================================
+   HEADER (Claude Branded)
+   ============================================================================= */
+
+Header {
+    background: $claude-orange;
+    color: $claude-dark;
+    text-style: bold;
+    height: 3;
+}
+
+Header > HeaderTitle {
+    color: $claude-dark;
+    text-style: bold;
+}
+
+HeaderIcon {
+    color: $claude-dark;
+}
+
+/* =============================================================================
+   FOOTER
+   ============================================================================= */
+
+Footer {
+    background: $claude-surface;
+    color: $claude-text-dim;
+}
+
+Footer > FooterKey {
+    background: $claude-orange-dim;
+    color: $claude-dark;
+}
+
+Footer > FooterKey > .footer-key--key {
+    background: $claude-orange;
+    color: $claude-dark;
+    text-style: bold;
+}
+
+Footer > FooterKey > .footer-key--description {
+    color: $claude-text;
+}
+
+/* =============================================================================
+   MAIN LAYOUT
+   ============================================================================= */
+
 #main-container {
     width: 100%;
     height: 100%;
 }
 
-/* Sidebar - component list */
 #sidebar {
     width: 60%;
     height: 100%;
-    padding: 0 1;
+    padding: 1 1;
+    background: $claude-dark;
 }
 
-/* Detail panel */
 #detail-panel {
     width: 40%;
     height: 100%;
-    padding: 0 1;
-    border-left: solid $primary;
+    padding: 1 1;
+    background: $claude-surface;
+    border-left: tall $claude-orange;
 }
 
-/* Search bar */
+/* =============================================================================
+   SEARCH BAR
+   ============================================================================= */
+
 SearchBar {
     margin-bottom: 1;
+    background: $claude-surface;
+    border: tall $claude-border;
+    padding: 0 1;
+    height: 3;
 }
 
-/* Type filter buttons */
+SearchBar:focus {
+    border: tall $claude-orange;
+}
+
+SearchBar > .input--cursor {
+    background: $claude-orange;
+    color: $claude-dark;
+}
+
+SearchBar > .input--placeholder {
+    color: $claude-text-muted;
+}
+
+/* =============================================================================
+   TYPE FILTER BUTTONS
+   ============================================================================= */
+
 TypeFilter {
-    height: 3;
+    height: auto;
     margin-bottom: 1;
+    padding: 0;
 }
 
 TypeFilter Button {
-    min-width: 8;
-    height: 1;
+    min-width: 10;
+    height: 3;
     margin: 0 1 0 0;
-    background: $surface;
-    color: $text;
-    border: none;
+    padding: 0 1;
+    background: $claude-surface;
+    color: $claude-text-dim;
+    border: tall $claude-border;
+    text-style: none;
 }
 
 TypeFilter Button:hover {
-    background: $surface-lighten-1;
+    background: $claude-surface-light;
+    color: $claude-text;
+    border: tall $claude-orange-dim;
 }
 
 TypeFilter Button.active {
-    background: $accent;
-    color: $text;
+    background: $claude-orange;
+    color: $claude-dark;
+    text-style: bold;
+    border: tall $claude-orange-bright;
 }
 
 TypeFilter Button:focus {
-    text-style: bold;
+    border: tall $claude-orange;
 }
 
-/* Component list table */
+/* =============================================================================
+   COMPONENT LIST (DataTable)
+   ============================================================================= */
+
 ComponentList {
     height: 1fr;
     margin-bottom: 1;
+    background: $claude-surface;
+    border: tall $claude-border;
 }
 
+ComponentList:focus {
+    border: tall $claude-orange;
+}
+
+/* Table header */
 ComponentList > .datatable--header {
-    background: $primary;
+    background: $claude-orange-dim;
+    color: $claude-dark;
     text-style: bold;
 }
 
+/* Table header cell hover */
+ComponentList > .datatable--header-hover {
+    background: $claude-orange;
+    color: $claude-dark;
+}
+
+/* Selected row (cursor) */
 ComponentList > .datatable--cursor {
-    background: $accent;
+    background: $claude-orange;
+    color: $claude-dark;
+    text-style: bold;
 }
 
-/* Stats panel */
+/* Hover row */
+ComponentList > .datatable--hover {
+    background: $claude-surface-lighter;
+}
+
+/* Fixed columns */
+ComponentList > .datatable--fixed {
+    background: $claude-surface-light;
+}
+
+/* Zebra stripes */
+ComponentList > .datatable--odd-row {
+    background: $claude-surface;
+}
+
+ComponentList > .datatable--even-row {
+    background: $claude-surface-light;
+}
+
+/* =============================================================================
+   STATS PANEL
+   ============================================================================= */
+
 StatsPanel {
-    height: 3;
-    background: $surface;
-    padding: 1;
-    border: round $primary;
+    height: auto;
+    min-height: 3;
+    padding: 1 2;
+    background: $claude-surface;
+    border: tall $claude-border;
+    color: $claude-text;
 }
 
-/* Detail view */
+StatsPanel:focus {
+    border: tall $claude-orange;
+}
+
+/* =============================================================================
+   DETAIL VIEW
+   ============================================================================= */
+
 DetailView {
     height: 100%;
-    padding: 1;
+    padding: 0;
+    background: $claude-surface;
 }
 
 #detail-content {
     width: 100%;
+    padding: 0;
 }
 
-/* Scrollbar styling */
+/* =============================================================================
+   SCROLLBARS
+   ============================================================================= */
+
 VerticalScroll > ScrollBar {
-    background: $surface;
+    background: $claude-surface-light;
 }
 
-/* Header customization */
-Header {
-    background: $primary;
+VerticalScroll > ScrollBar > .scrollbar--bar {
+    background: $claude-orange-dim;
 }
 
-/* Footer customization */
-Footer {
-    background: $surface;
+VerticalScroll > ScrollBar > .scrollbar--bar:hover {
+    background: $claude-orange;
 }
 
-/* Notifications */
+VerticalScroll > ScrollBar > .scrollbar--bar-active {
+    background: $claude-orange-bright;
+}
+
+HorizontalScroll > ScrollBar {
+    background: $claude-surface-light;
+}
+
+HorizontalScroll > ScrollBar > .scrollbar--bar {
+    background: $claude-orange-dim;
+}
+
+/* =============================================================================
+   NOTIFICATIONS / TOASTS
+   ============================================================================= */
+
 Toast {
-    background: $surface;
-    border: round $accent;
+    background: $claude-surface;
+    border: tall $claude-orange;
+    color: $claude-text;
 }
 
-/* Focus styling */
+Toast.-information {
+    border: tall $claude-orange;
+}
+
+Toast.-success {
+    border: tall $claude-success;
+}
+
+Toast.-warning {
+    border: tall $claude-warning;
+}
+
+Toast.-error {
+    border: tall $claude-error;
+}
+
+/* =============================================================================
+   LOADING INDICATOR
+   ============================================================================= */
+
+LoadingIndicator {
+    color: $claude-orange;
+}
+
+/* =============================================================================
+   FOCUS & SELECTION STYLING
+   ============================================================================= */
+
 *:focus {
-    border: round $accent;
+    border: tall $claude-orange;
 }
 
-/* Dark theme overrides for better visibility */
-Screen {
-    background: $background;
-}
+/* =============================================================================
+   PANEL STYLING (Rich Panels in DetailView)
+   ============================================================================= */
+
+/* These are rendered by Rich, controlled in detail_view.py */
+

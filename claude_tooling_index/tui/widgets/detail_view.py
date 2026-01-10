@@ -36,9 +36,10 @@ class DetailView(VerticalScroll):
     def clear(self) -> None:
         """Clear the detail view"""
         self.current_component = None
-        self.query_one("#detail-content", Static).update(
-            Text("Select a component to view details", style="dim")
-        )
+        welcome = Text()
+        welcome.append("◉ ", style="#DA7756")
+        welcome.append("Select a component to view details", style="dim italic")
+        self.query_one("#detail-content", Static).update(welcome)
 
     def _build_content(self, component: Any) -> Panel:
         """Build rich content for the component"""
@@ -51,8 +52,11 @@ class DetailView(VerticalScroll):
             status, "❓"
         )
 
+        # Claude orange color
+        claude_orange = "#DA7756"
+
         header = Text()
-        header.append(f"{component.name}", style="bold cyan")
+        header.append(f"{component.name}", style=f"bold {claude_orange}")
         header.append(f" [{comp_type}] ", style="dim")
         header.append(f"{status_emoji} {status}")
         content.append(header)
@@ -146,7 +150,7 @@ class DetailView(VerticalScroll):
         perf_notes = getattr(component, "performance_notes", None)
         if perf_notes:
             content.append("")
-            content.append(Text("Performance", style="bold underline"))
+            content.append(Text("Performance", style=f"bold underline {claude_orange}"))
             try:
                 perf_data = json.loads(perf_notes)
                 if isinstance(perf_data, dict):
@@ -173,7 +177,7 @@ class DetailView(VerticalScroll):
         dependencies = getattr(component, "dependencies", None)
         if dependencies and len(dependencies) > 0:
             content.append("")
-            content.append(Text("Dependencies", style="bold underline"))
+            content.append(Text("Dependencies", style=f"bold underline {claude_orange}"))
             for dep in dependencies:
                 content.append(Text(f"  • {dep}"))
 
@@ -187,7 +191,12 @@ class DetailView(VerticalScroll):
         # Build panel
         from rich.console import Group
 
-        return Panel(Group(*content), title=f"[bold]{component.name}[/bold]", border_style="cyan")
+        return Panel(
+            Group(*content),
+            title=f"[bold {claude_orange}]{component.name}[/bold {claude_orange}]",
+            border_style=claude_orange,
+            subtitle=f"[dim]{comp_type}[/dim]",
+        )
 
     def _format_size(self, size_bytes: int) -> str:
         """Format file size in human-readable format"""
