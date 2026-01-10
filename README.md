@@ -39,7 +39,7 @@ A shareable tool that catalogs and analyzes your Claude Code setup with usage an
 ### Quick Install (Recommended)
 
 ```bash
-git clone https://github.com/wolfgangschoenberger/claude-tooling-index
+git clone https://github.com/wolfiesch/claude-tooling-index
 cd claude-tooling-index
 ./INSTALL.sh
 ```
@@ -57,7 +57,7 @@ tooling-index scan
 
 ```bash
 # Register marketplace
-claude /marketplace add tooling-index https://github.com/wolfgangschoenberger/claude-tooling-index
+claude /marketplace add tooling-index https://github.com/wolfiesch/claude-tooling-index
 
 # Install plugin
 claude /plugin install tooling-index@tooling-index
@@ -273,7 +273,7 @@ rm ~/.claude/hooks/post_tool_use_tooling
 
 ```bash
 # Clone repository
-git clone https://github.com/wolfgangschoenberger/claude-tooling-index
+git clone https://github.com/wolfiesch/claude-tooling-index
 cd claude-tooling-index
 
 # Install in development mode
@@ -315,5 +315,5 @@ Created by Wolfgang Schoenberger
 
 ## Links
 
-- **Repository**: https://github.com/wolfgangschoenberger/claude-tooling-index
-- **Issues**: https://github.com/wolfgangschoenberger/claude-tooling-index/issues
+- **Repository**: https://github.com/wolfiesch/claude-tooling-index
+- **Issues**: https://github.com/wolfiesch/claude-tooling-index/issues

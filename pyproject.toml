@@ -41,12 +41,12 @@ dev = [
 ]
 
 [project.scripts]
-tooling-index = "cli:cli"
+tooling-index = "claude_tooling_index.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/wolfgangschoenberger/claude-tooling-index"
-Repository = "https://github.com/wolfgangschoenberger/claude-tooling-index"
-Issues = "https://github.com/wolfgangschoenberger/claude-tooling-index/issues"
+Homepage = "https://github.com/wolfiesch/claude-tooling-index"
+Repository = "https://github.com/wolfiesch/claude-tooling-index"
+Issues = "https://github.com/wolfiesch/claude-tooling-index/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
