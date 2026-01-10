@@ -1,0 +1,40 @@
+{
+  "name": "tooling-index",
+  "version": "1.0.0",
+  "description": "Catalog and analyze your Claude Code setup with TUI dashboard and usage analytics",
+  "author": {
+    "name": "Wolfgang Schoenberger",
+    "url": "https://github.com/wolfgangschoenberger"
+  },
+  "homepage": "https://github.com/wolfgangschoenberger/claude-tooling-index",
+  "repository": "https://github.com/wolfgangschoenberger/claude-tooling-index",
+  "license": "MIT",
+  "keywords": [
+    "tools",
+    "analytics",
+    "dashboard",
+    "index",
+    "tui",
+    "skills",
+    "plugins",
+    "commands"
+  ],
+  "commands": "../plugin-commands/",
+  "python": {
+    "package": "claude_tooling_index",
+    "version": ">=3.8"
+  },
+  "dependencies": {
+    "textual": ">=0.47.0",
+    "rich": ">=13.0.0",
+    "click": ">=8.0.0"
+  },
+  "features": [
+    "Scans all 6 component types (skills, plugins, commands, hooks, MCPs, binaries)",
+    "SQLite database with FTS5 full-text search",
+    "Interactive TUI dashboard",
+    "Usage analytics and performance tracking",
+    "JSON and Markdown export",
+    "Cross-user compatible"
+  ]
+}

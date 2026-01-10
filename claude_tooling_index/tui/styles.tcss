@@ -1,0 +1,119 @@
+/* Claude Tooling Index TUI Styles */
+
+/* Main layout */
+#main-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Sidebar - component list */
+#sidebar {
+    width: 60%;
+    height: 100%;
+    padding: 0 1;
+}
+
+/* Detail panel */
+#detail-panel {
+    width: 40%;
+    height: 100%;
+    padding: 0 1;
+    border-left: solid $primary;
+}
+
+/* Search bar */
+SearchBar {
+    margin-bottom: 1;
+}
+
+/* Type filter buttons */
+TypeFilter {
+    height: 3;
+    margin-bottom: 1;
+}
+
+TypeFilter Button {
+    min-width: 8;
+    height: 1;
+    margin: 0 1 0 0;
+    background: $surface;
+    color: $text;
+    border: none;
+}
+
+TypeFilter Button:hover {
+    background: $surface-lighten-1;
+}
+
+TypeFilter Button.active {
+    background: $accent;
+    color: $text;
+}
+
+TypeFilter Button:focus {
+    text-style: bold;
+}
+
+/* Component list table */
+ComponentList {
+    height: 1fr;
+    margin-bottom: 1;
+}
+
+ComponentList > .datatable--header {
+    background: $primary;
+    text-style: bold;
+}
+
+ComponentList > .datatable--cursor {
+    background: $accent;
+}
+
+/* Stats panel */
+StatsPanel {
+    height: 3;
+    background: $surface;
+    padding: 1;
+    border: round $primary;
+}
+
+/* Detail view */
+DetailView {
+    height: 100%;
+    padding: 1;
+}
+
+#detail-content {
+    width: 100%;
+}
+
+/* Scrollbar styling */
+VerticalScroll > ScrollBar {
+    background: $surface;
+}
+
+/* Header customization */
+Header {
+    background: $primary;
+}
+
+/* Footer customization */
+Footer {
+    background: $surface;
+}
+
+/* Notifications */
+Toast {
+    background: $surface;
+    border: round $accent;
+}
+
+/* Focus styling */
+*:focus {
+    border: round $accent;
+}
+
+/* Dark theme overrides for better visibility */
+Screen {
+    background: $background;
+}

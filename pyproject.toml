@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-tooling-index"
+version = "1.0.0"
+description = "Catalog and analyze Claude Code tooling with TUI dashboard"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Wolfgang Schoenberger"}
+]
+keywords = ["claude", "claude-code", "tooling", "analytics", "dashboard", "tui"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "click>=8.0.0",
+    "pyyaml>=6.0",
+    "textual>=0.47.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+tooling-index = "cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/wolfgangschoenberger/claude-tooling-index"
+Repository = "https://github.com/wolfgangschoenberger/claude-tooling-index"
+Issues = "https://github.com/wolfgangschoenberger/claude-tooling-index/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["claude_tooling_index*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

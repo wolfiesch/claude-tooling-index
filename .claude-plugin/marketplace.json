@@ -1,0 +1,21 @@
+{
+  "name": "tooling-index-marketplace",
+  "owner": {
+    "name": "Wolfgang Schoenberger",
+    "url": "https://github.com/wolfgangschoenberger"
+  },
+  "metadata": {
+    "description": "Claude Code tooling index and analytics dashboard",
+    "version": "1.0.0",
+    "homepage": "https://github.com/wolfgangschoenberger/claude-tooling-index"
+  },
+  "plugins": [
+    {
+      "name": "tooling-index",
+      "source": ".",
+      "description": "TUI dashboard for exploring and analyzing Claude Code components",
+      "version": "1.0.0",
+      "category": "developer-tools"
+    }
+  ]
+}
