@@ -5,7 +5,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
-from .models import ScanResult
+from .models import ScanResult, ExtendedScanResult
 from .scanners import (
     SkillScanner,
     PluginScanner,
@@ -13,6 +13,10 @@ from .scanners import (
     HookScanner,
     MCPScanner,
     BinaryScanner,
+    # Phase 6: Extended metadata scanners
+    UserSettingsScanner,
+    EventQueueScanner,
+    InsightsScanner,
 )
 
 
@@ -22,13 +26,22 @@ class ToolingScanner:
     def __init__(self, claude_home: Optional[Path] = None):
         self.claude_home = claude_home or self._detect_claude_home()
 
-        # Initialize all scanners
+        # Initialize core component scanners
         self.skills_scanner = SkillScanner(self.claude_home / "skills")
         self.plugins_scanner = PluginScanner(self.claude_home / "plugins")
         self.commands_scanner = CommandScanner(self.claude_home / "commands")
         self.hooks_scanner = HookScanner(self.claude_home / "hooks")
         self.mcps_scanner = MCPScanner(self.claude_home / "mcp.json")
         self.binaries_scanner = BinaryScanner(self.claude_home / "bin")
+
+        # Phase 6: Extended metadata scanners
+        self.user_settings_scanner = UserSettingsScanner()
+        self.event_queue_scanner = EventQueueScanner(
+            self.claude_home / "data" / "event_queue.jsonl"
+        )
+        self.insights_scanner = InsightsScanner(
+            self.claude_home / "data" / "insights.db"
+        )
 
     def scan_all(self, parallel: bool = True) -> ScanResult:
         """
@@ -96,6 +109,46 @@ class ToolingScanner:
             error_msg = f"Error scanning {component_type}: {str(e)}"
             errors.append(error_msg)
             return []  # Return empty list on error
+
+    def scan_extended(self, parallel: bool = True) -> ExtendedScanResult:
+        """
+        Scan all components plus Phase 6 extended metadata.
+
+        Args:
+            parallel: If True, run scanners in parallel (faster).
+
+        Returns:
+            ExtendedScanResult with core components and extended metadata
+        """
+        # Get core scan result
+        core_result = self.scan_all(parallel=parallel)
+
+        # Scan extended metadata (these are fast, run sequentially)
+        user_settings = None
+        event_metrics = None
+        insight_metrics = None
+
+        try:
+            user_settings = self.user_settings_scanner.scan()
+        except Exception as e:
+            core_result.errors.append(f"Error scanning user settings: {e}")
+
+        try:
+            event_metrics = self.event_queue_scanner.scan()
+        except Exception as e:
+            core_result.errors.append(f"Error scanning event queue: {e}")
+
+        try:
+            insight_metrics = self.insights_scanner.scan()
+        except Exception as e:
+            core_result.errors.append(f"Error scanning insights: {e}")
+
+        return ExtendedScanResult(
+            core=core_result,
+            user_settings=user_settings,
+            event_metrics=event_metrics,
+            insight_metrics=insight_metrics,
+        )
 
     def _detect_claude_home(self) -> Path:
         """Auto-detect ~/.claude directory"""

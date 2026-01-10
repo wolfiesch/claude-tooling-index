@@ -153,3 +153,131 @@ class InvocationRecord:
     component: str  # Format: "type:name"
     duration_ms: Optional[int] = None
     success: bool = True
+
+
+# =============================================================================
+# Phase 6: Extended Metadata Models
+# =============================================================================
+
+
+@dataclass
+class SkillUsage:
+    """Individual skill usage statistics from ~/.claude.json"""
+
+    name: str
+    usage_count: int
+    last_used_at: Optional[datetime] = None
+
+
+@dataclass
+class ProjectMetric:
+    """Per-project productivity and cost metrics from ~/.claude.json"""
+
+    path: str
+    last_session_cost: Optional[float] = None
+    last_session_duration_ms: int = 0
+    lines_added: int = 0
+    lines_removed: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_tokens: int = 0
+    api_latency_ms: int = 0
+    onboarding_seen_count: int = 0
+    has_trust_accepted: bool = False
+
+
+@dataclass
+class UserSettingsMetadata:
+    """User settings and usage metrics from ~/.claude.json"""
+
+    total_startups: int = 0
+    first_startup_date: Optional[datetime] = None
+    account_age_days: int = 0
+    sessions_per_day: float = 0.0
+    memory_usage_count: int = 0
+    prompt_queue_use_count: int = 0
+
+    # Skill usage
+    skill_usage: Dict[str, SkillUsage] = field(default_factory=dict)
+    top_skills: List[SkillUsage] = field(default_factory=list)
+
+    # Tip/feature adoption
+    tip_adoption: Dict[str, int] = field(default_factory=dict)
+    high_adoption_features: List[str] = field(default_factory=list)
+
+    # Project metrics
+    project_metrics: Dict[str, ProjectMetric] = field(default_factory=dict)
+    total_projects: int = 0
+
+    # GitHub repos
+    github_repos: Dict[str, List[str]] = field(default_factory=dict)
+    total_github_repos: int = 0
+
+
+@dataclass
+class EventMetrics:
+    """Event queue analytics from ~/.claude/data/event_queue.jsonl"""
+
+    total_events: int = 0
+    tool_frequency: Dict[str, int] = field(default_factory=dict)
+    top_tools: List[tuple] = field(default_factory=list)  # [(tool_name, count), ...]
+    session_count: int = 0
+    event_types: Dict[str, int] = field(default_factory=dict)
+    permission_distribution: Dict[str, float] = field(default_factory=dict)
+    date_range_start: Optional[datetime] = None
+    date_range_end: Optional[datetime] = None
+
+
+@dataclass
+class InsightMetrics:
+    """Insights analytics from ~/.claude/data/insights.db"""
+
+    total_insights: int = 0
+    by_category: Dict[str, int] = field(default_factory=dict)
+    by_project: Dict[str, int] = field(default_factory=dict)
+    processed_sessions: int = 0
+    recent_warnings: List[str] = field(default_factory=list)
+    recent_patterns: List[str] = field(default_factory=list)
+    recent_tradeoffs: List[str] = field(default_factory=list)
+
+
+@dataclass
+class SessionMetrics:
+    """Session analytics from ~/.claude/data/sessions/"""
+
+    total_sessions: int = 0
+    prompts_per_session: float = 0.0
+    project_distribution: Dict[str, int] = field(default_factory=dict)
+    activity_by_day: Dict[str, int] = field(default_factory=dict)
+    top_projects: List[tuple] = field(default_factory=list)  # [(project, count), ...]
+
+
+@dataclass
+class TaskMetrics:
+    """Task/todo analytics from ~/.claude/todos/"""
+
+    total_tasks: int = 0
+    completed: int = 0
+    pending: int = 0
+    in_progress: int = 0
+    completion_rate: float = 0.0
+
+
+@dataclass
+class ExtendedScanResult:
+    """Extended scan result including Phase 6 metadata"""
+
+    # Core scan result
+    core: ScanResult = field(default_factory=ScanResult)
+
+    # Phase 6 extended metadata
+    user_settings: Optional[UserSettingsMetadata] = None
+    event_metrics: Optional[EventMetrics] = None
+    insight_metrics: Optional[InsightMetrics] = None
+    session_metrics: Optional[SessionMetrics] = None
+    task_metrics: Optional[TaskMetrics] = None
+
+    @property
+    def total_count(self) -> int:
+        """Total component count from core scan"""
+        return self.core.total_count

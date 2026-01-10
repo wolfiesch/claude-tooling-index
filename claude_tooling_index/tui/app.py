@@ -42,30 +42,37 @@ class TypeFilter(Horizontal):
 
 
 class StatsPanel(Static):
-    """Panel showing quick statistics"""
+    """Panel showing quick statistics including extended Phase 6 metrics"""
 
     DEFAULT_CSS = """
     StatsPanel {
-        height: 3;
+        height: auto;
+        min-height: 5;
         width: 100%;
         background: $surface;
         padding: 0 1;
     }
     """
 
-    def update_stats(self, scan_result) -> None:
-        """Update the stats display"""
-        total = scan_result.total_count
-        skills = len(scan_result.skills)
-        plugins = len(scan_result.plugins)
-        commands = len(scan_result.commands)
-        hooks = len(scan_result.hooks)
-        mcps = len(scan_result.mcps)
-        binaries = len(scan_result.binaries)
+    def update_stats(self, extended_result) -> None:
+        """Update the stats display with extended metrics"""
+        # Get core scan result
+        core = extended_result.core if hasattr(extended_result, 'core') else extended_result
+        total = core.total_count
+        skills = len(core.skills)
+        plugins = len(core.plugins)
+        commands = len(core.commands)
+        hooks = len(core.hooks)
+        mcps = len(core.mcps)
+        binaries = len(core.binaries)
 
         # Claude orange for numbers
         orange = "#DA7756"
-        self.update(
+        cyan = "#5CCFE6"
+        green = "#87D65A"
+
+        # Line 1: Component counts
+        line1 = (
             f"[bold {orange}]◉[/bold {orange}] [bold]Total:[/bold] [{orange}]{total}[/{orange}]  "
             f"│  Skills: [{orange}]{skills}[/{orange}]  "
             f"│  Plugins: [{orange}]{plugins}[/{orange}]  "
@@ -74,6 +81,50 @@ class StatsPanel(Static):
             f"│  MCPs: [{orange}]{mcps}[/{orange}]  "
             f"│  Binaries: [{orange}]{binaries}[/{orange}]"
         )
+
+        lines = [line1]
+
+        # Line 2: Activity metrics (from user_settings)
+        if hasattr(extended_result, 'user_settings') and extended_result.user_settings:
+            us = extended_result.user_settings
+            top_skill = us.top_skills[0].name if us.top_skills else "none"
+            top_count = us.top_skills[0].usage_count if us.top_skills else 0
+            line2 = (
+                f"[{cyan}]📊[/{cyan}] Activity: [{cyan}]{us.total_startups}[/{cyan}] sessions  "
+                f"│  [{cyan}]{us.sessions_per_day:.1f}[/{cyan}]/day  "
+                f"│  [{cyan}]{us.account_age_days}[/{cyan}] days  "
+                f"│  [{cyan}]{us.total_projects}[/{cyan}] projects  "
+                f"│  Top: [{cyan}]{top_skill}[/{cyan}] ({top_count}x)"
+            )
+            lines.append(line2)
+
+        # Line 3: Event metrics (tool usage)
+        if hasattr(extended_result, 'event_metrics') and extended_result.event_metrics:
+            em = extended_result.event_metrics
+            top_tool = em.top_tools[0][0] if em.top_tools else "none"
+            top_tool_count = em.top_tools[0][1] if em.top_tools else 0
+            line3 = (
+                f"[{green}]🔧[/{green}] Events: [{green}]{em.total_events}[/{green}] total  "
+                f"│  [{green}]{em.session_count}[/{green}] sessions  "
+                f"│  Top tool: [{green}]{top_tool}[/{green}] ({top_tool_count}x)"
+            )
+            lines.append(line3)
+
+        # Line 4: Insights
+        if hasattr(extended_result, 'insight_metrics') and extended_result.insight_metrics:
+            im = extended_result.insight_metrics
+            warnings = im.by_category.get('warning', 0)
+            tradeoffs = im.by_category.get('tradeoff', 0)
+            patterns = im.by_category.get('pattern', 0)
+            line4 = (
+                f"[#FFD580]📈[/#FFD580] Insights: [#FFD580]{im.total_insights}[/#FFD580] total  "
+                f"│  [#FFD580]{warnings}[/#FFD580] warnings  "
+                f"│  [#FFD580]{tradeoffs}[/#FFD580] tradeoffs  "
+                f"│  [#FFD580]{patterns}[/#FFD580] patterns"
+            )
+            lines.append(line4)
+
+        self.update("\n".join(lines))
 
 
 class ToolingIndexTUI(App):
@@ -99,7 +150,8 @@ class ToolingIndexTUI(App):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.scan_result = None
+        self.scan_result = None  # Core ScanResult for component list
+        self.extended_result = None  # ExtendedScanResult with Phase 6 metrics
         self.current_type_filter = None
 
     def compose(self) -> ComposeResult:
@@ -126,18 +178,20 @@ class ToolingIndexTUI(App):
         self._load_components()
 
     def _load_components(self) -> None:
-        """Load components from scanner"""
+        """Load components from scanner including Phase 6 extended metrics"""
         try:
             scanner = ToolingScanner()
-            self.scan_result = scanner.scan_all()
+            # Use extended scan to get Phase 6 metrics
+            self.extended_result = scanner.scan_extended()
+            self.scan_result = self.extended_result.core
 
-            # Update component list
+            # Update component list with core scan result
             component_list = self.query_one("#component-list", ComponentList)
             component_list.load_components(self.scan_result)
 
-            # Update stats
+            # Update stats with extended result (includes activity, events, insights)
             stats = self.query_one("#stats", StatsPanel)
-            stats.update_stats(self.scan_result)
+            stats.update_stats(self.extended_result)
 
             # Clear detail view
             detail_view = self.query_one("#detail-view", DetailView)

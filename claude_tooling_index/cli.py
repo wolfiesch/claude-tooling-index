@@ -82,7 +82,8 @@ def scan(parallel, verbose, no_db):
 
 @cli.command()
 @click.option("--days", default=30, help="Number of days to analyze")
-def stats(days):
+@click.option("--detailed", is_flag=True, help="Show extended Phase 6 metrics (activity, events, insights)")
+def stats(days, detailed):
     """Show usage analytics and statistics"""
     try:
         from claude_tooling_index.analytics import AnalyticsTracker
@@ -119,9 +120,98 @@ def stats(days):
 
         tracker.close()
 
+        # Phase 6: Extended metrics
+        if detailed:
+            _show_extended_stats()
+
     except Exception as e:
         click.echo(f"❌ Error: {e}", err=True)
         raise click.Abort()
+
+
+def _show_extended_stats():
+    """Display Phase 6 extended metrics"""
+    from claude_tooling_index.scanner import ToolingScanner
+
+    click.echo(f"\n{'='*60}")
+    click.echo("📊 Extended Metrics (Phase 6)")
+    click.echo(f"{'='*60}")
+
+    scanner = ToolingScanner()
+    extended = scanner.scan_extended()
+
+    # User Settings
+    if extended.user_settings:
+        us = extended.user_settings
+        click.echo(f"\n👤 User Activity:")
+        click.echo(f"  Total sessions: {us.total_startups}")
+        click.echo(f"  Account age: {us.account_age_days} days")
+        click.echo(f"  Sessions/day: {us.sessions_per_day:.2f}")
+        click.echo(f"  Total projects: {us.total_projects}")
+        click.echo(f"  GitHub repos: {us.total_github_repos}")
+        click.echo(f"  Memory usage count: {us.memory_usage_count}")
+        click.echo(f"  Prompt queue uses: {us.prompt_queue_use_count}")
+
+        if us.top_skills:
+            click.echo(f"\n  🔥 Top Skills by Usage:")
+            for skill in us.top_skills[:10]:
+                last_used = skill.last_used_at.strftime("%Y-%m-%d") if skill.last_used_at else "unknown"
+                click.echo(f"    {skill.name}: {skill.usage_count} uses (last: {last_used})")
+
+        if us.high_adoption_features:
+            click.echo(f"\n  ✅ High Adoption Features (>90%):")
+            for feature in us.high_adoption_features[:10]:
+                click.echo(f"    - {feature}")
+
+    # Event Metrics
+    if extended.event_metrics:
+        em = extended.event_metrics
+        click.echo(f"\n🔧 Event Queue Analytics:")
+        click.echo(f"  Total events: {em.total_events}")
+        click.echo(f"  Unique sessions: {em.session_count}")
+
+        if em.date_range_start and em.date_range_end:
+            click.echo(f"  Date range: {em.date_range_start.strftime('%Y-%m-%d')} to {em.date_range_end.strftime('%Y-%m-%d')}")
+
+        click.echo(f"\n  📊 Event Types:")
+        for event_type, count in sorted(em.event_types.items(), key=lambda x: x[1], reverse=True):
+            click.echo(f"    {event_type}: {count}")
+
+        if em.top_tools:
+            click.echo(f"\n  🔥 Top Tools by Invocation:")
+            for tool_name, count in em.top_tools[:15]:
+                click.echo(f"    {tool_name}: {count}")
+
+        if em.permission_distribution:
+            click.echo(f"\n  🔐 Permission Modes:")
+            for mode, pct in sorted(em.permission_distribution.items(), key=lambda x: x[1], reverse=True):
+                click.echo(f"    {mode}: {pct*100:.1f}%")
+
+    # Insight Metrics
+    if extended.insight_metrics:
+        im = extended.insight_metrics
+        click.echo(f"\n📈 Insights Analytics:")
+        click.echo(f"  Total insights: {im.total_insights}")
+        click.echo(f"  Processed sessions: {im.processed_sessions}")
+
+        click.echo(f"\n  📊 By Category:")
+        for category, count in sorted(im.by_category.items(), key=lambda x: x[1], reverse=True):
+            click.echo(f"    {category}: {count}")
+
+        if im.by_project:
+            click.echo(f"\n  📁 Top Projects by Insights:")
+            for project, count in sorted(im.by_project.items(), key=lambda x: x[1], reverse=True)[:10]:
+                click.echo(f"    {project}: {count}")
+
+        if im.recent_warnings:
+            click.echo(f"\n  ⚠️  Recent Warnings:")
+            for warning in im.recent_warnings[:5]:
+                click.echo(f"    - {warning[:80]}...")
+
+        if im.recent_patterns:
+            click.echo(f"\n  🔄 Recent Patterns:")
+            for pattern in im.recent_patterns[:5]:
+                click.echo(f"    - {pattern[:80]}...")
 
 
 @cli.command()
