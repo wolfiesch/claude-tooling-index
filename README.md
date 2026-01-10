@@ -19,7 +19,7 @@ A shareable tool that catalogs and analyzes your Claude Code setup with usage an
   - Most-used components ranking
 
 - **TUI Dashboard**
-  - Terminal UI like `htop` for exploring your tooling
+  - Terminal UI for exploring your tooling
   - Live search and filtering
   - Type filter buttons
   - Component detail panel
