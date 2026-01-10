@@ -1,4 +1,4 @@
-"""MCP scanner - extracts metadata from mcp.json"""
+"""MCP scanner - extracts metadata from mcp.json and ~/.claude.json"""
 
 import json
 from pathlib import Path
@@ -9,28 +9,48 @@ from ..models import MCPMetadata
 
 
 class MCPScanner:
-    """Scans ~/.claude/mcp.json for MCP server configurations"""
+    """Scans MCP server configurations from multiple locations"""
 
     def __init__(self, mcp_json_path: Path):
         self.mcp_json_path = mcp_json_path
+        # Also check ~/.claude.json (Claude Code's project-level config)
+        self.claude_json_path = Path.home() / ".claude.json"
 
     def scan(self) -> List[MCPMetadata]:
-        """Scan MCP servers from mcp.json"""
+        """Scan MCP servers from all config locations"""
+        mcps = []
+        seen_names = set()
+
+        # Scan ~/.claude.json first (primary location for Claude Code)
+        mcps.extend(self._scan_file(self.claude_json_path, seen_names))
+
+        # Then scan ~/.claude/mcp.json (legacy/fallback)
+        mcps.extend(self._scan_file(self.mcp_json_path, seen_names))
+
+        return mcps
+
+    def _scan_file(self, config_path: Path, seen_names: set) -> List[MCPMetadata]:
+        """Scan a single config file for MCP servers"""
         mcps = []
 
-        if not self.mcp_json_path.exists():
+        if not config_path.exists():
             return mcps
 
         try:
-            with open(self.mcp_json_path, "r") as f:
+            with open(config_path, "r") as f:
                 data = json.load(f)
 
-            # mcp.json format: { "mcpServers": { "name": { config } } }
+            # Format: { "mcpServers": { "name": { config } } }
             mcp_servers = data.get("mcpServers", {})
 
             for name, config in mcp_servers.items():
+                # Skip duplicates (already seen in another config)
+                if name in seen_names:
+                    continue
+                seen_names.add(name)
+
                 try:
-                    mcp = self._parse_mcp_config(name, config)
+                    mcp = self._parse_mcp_config(name, config, config_path)
                     if mcp:
                         mcps.append(mcp)
                 except Exception as e:
@@ -40,37 +60,37 @@ class MCPScanner:
                         origin="unknown",
                         status="error",
                         last_modified=datetime.now(),
-                        install_path=self.mcp_json_path,
+                        install_path=config_path,
                         error_message=str(e),
                     )
                     mcps.append(error_mcp)
 
         except (json.JSONDecodeError, OSError) as e:
-            # If mcp.json is corrupted, return empty list
+            # If config file is corrupted, return empty list
             pass
 
         return mcps
 
-    def _parse_mcp_config(self, name: str, config: dict) -> MCPMetadata:
+    def _parse_mcp_config(self, name: str, config: dict, config_path: Path) -> MCPMetadata:
         """Parse a single MCP server configuration"""
         command = config.get("command", "")
         args = config.get("args", [])
         env_vars = config.get("env", {})
-        transport = config.get("transport", "stdio")
+        transport = config.get("transport", config.get("type", "stdio"))
 
         # Detect origin from name or command
         origin = self._detect_origin(name, command)
 
-        # MCP servers are active if defined in mcp.json
+        # MCP servers are active if defined in config
         status = "active"
 
-        # Use mcp.json's modification time
+        # Use config file's modification time
         last_modified = datetime.fromtimestamp(
-            self.mcp_json_path.stat().st_mtime
+            config_path.stat().st_mtime
         )
 
         # Install path could be the command path if local
-        install_path = Path(command).expanduser() if command else self.mcp_json_path
+        install_path = Path(command).expanduser() if command and not command.startswith("http") else config_path
 
         return MCPMetadata(
             name=name,
