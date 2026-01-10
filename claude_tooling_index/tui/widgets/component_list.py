@@ -87,18 +87,19 @@ class ComponentList(DataTable):
         """Refresh the table with current filtered data"""
         self.clear()
 
-        for comp_type, component in self.filtered_components:
+        for idx, (comp_type, component) in enumerate(self.filtered_components):
             status = self._format_status(component.status)
             version = getattr(component, "version", "-") or "-"
             origin = getattr(component, "origin", "unknown")
 
+            # Use index to ensure unique keys (same name can exist in multiple marketplaces)
             self.add_row(
                 component.name,
                 comp_type,
                 origin,
                 status,
                 version,
-                key=f"{comp_type}:{component.name}",
+                key=f"{idx}:{comp_type}:{component.name}",
             )
 
     def _format_status(self, status: str) -> str:
@@ -115,10 +116,14 @@ class ComponentList(DataTable):
         """Handle row selection"""
         if event.row_key:
             key = str(event.row_key.value)
-            for comp_type, component in self.filtered_components:
-                if f"{comp_type}:{component.name}" == key:
+            # Key format: "{idx}:{comp_type}:{component.name}"
+            try:
+                idx = int(key.split(":")[0])
+                if 0 <= idx < len(self.filtered_components):
+                    _, component = self.filtered_components[idx]
                     self.post_message(self.ComponentSelected(component))
-                    break
+            except (ValueError, IndexError):
+                pass
 
     def get_selected_component(self) -> Optional[Any]:
         """Get the currently selected component"""
