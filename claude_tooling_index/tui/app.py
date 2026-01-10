@@ -124,6 +124,29 @@ class StatsPanel(Static):
             )
             lines.append(line4)
 
+        # Line 5: Session metrics (T1)
+        if hasattr(extended_result, 'session_metrics') and extended_result.session_metrics:
+            sm = extended_result.session_metrics
+            project_count = len(sm.project_distribution) if sm.project_distribution else 0
+            line5 = (
+                f"[#B39DDB]📁[/#B39DDB] Sessions: [#B39DDB]{sm.total_sessions}[/#B39DDB] total  "
+                f"│  [#B39DDB]{sm.prompts_per_session:.1f}[/#B39DDB] prompts/session  "
+                f"│  [#B39DDB]{project_count}[/#B39DDB] projects"
+            )
+            lines.append(line5)
+
+        # Line 6: Task metrics (T1)
+        if hasattr(extended_result, 'task_metrics') and extended_result.task_metrics:
+            tm = extended_result.task_metrics
+            completion_pct = tm.completion_rate * 100
+            line6 = (
+                f"[#FFE082]✅[/#FFE082] Tasks: [#FFE082]{tm.total_tasks}[/#FFE082] total  "
+                f"│  [#FFE082]{tm.completed}[/#FFE082] done ({completion_pct:.0f}%)  "
+                f"│  [#FFE082]{tm.pending}[/#FFE082] pending  "
+                f"│  [#FFE082]{tm.in_progress}[/#FFE082] active"
+            )
+            lines.append(line6)
+
         self.update("\n".join(lines))
 
 

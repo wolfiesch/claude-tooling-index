@@ -17,6 +17,9 @@ from .scanners import (
     UserSettingsScanner,
     EventQueueScanner,
     InsightsScanner,
+    # Phase 6 T1: Session and task analytics
+    SessionAnalyticsScanner,
+    TodoScanner,
 )
 
 
@@ -42,6 +45,11 @@ class ToolingScanner:
         self.insights_scanner = InsightsScanner(
             self.claude_home / "data" / "insights.db"
         )
+        # Phase 6 T1: Session and task analytics
+        self.sessions_scanner = SessionAnalyticsScanner(
+            self.claude_home / "data" / "sessions"
+        )
+        self.todos_scanner = TodoScanner(self.claude_home / "todos")
 
     def scan_all(self, parallel: bool = True) -> ScanResult:
         """
@@ -127,6 +135,8 @@ class ToolingScanner:
         user_settings = None
         event_metrics = None
         insight_metrics = None
+        session_metrics = None
+        task_metrics = None
 
         try:
             user_settings = self.user_settings_scanner.scan()
@@ -143,11 +153,24 @@ class ToolingScanner:
         except Exception as e:
             core_result.errors.append(f"Error scanning insights: {e}")
 
+        # T1: Session and task analytics
+        try:
+            session_metrics = self.sessions_scanner.scan()
+        except Exception as e:
+            core_result.errors.append(f"Error scanning sessions: {e}")
+
+        try:
+            task_metrics = self.todos_scanner.scan()
+        except Exception as e:
+            core_result.errors.append(f"Error scanning todos: {e}")
+
         return ExtendedScanResult(
             core=core_result,
             user_settings=user_settings,
             event_metrics=event_metrics,
             insight_metrics=insight_metrics,
+            session_metrics=session_metrics,
+            task_metrics=task_metrics,
         )
 
     def _detect_claude_home(self) -> Path:

@@ -11,6 +11,9 @@ from .binaries import BinaryScanner
 from .user_settings import UserSettingsScanner
 from .event_queue import EventQueueScanner
 from .insights import InsightsScanner
+# Phase 6 T1: Session and task analytics
+from .sessions import SessionAnalyticsScanner
+from .todos import TodoScanner
 
 __all__ = [
     # Core component scanners
@@ -20,8 +23,11 @@ __all__ = [
     "HookScanner",
     "MCPScanner",
     "BinaryScanner",
-    # Phase 6 extended scanners
+    # Phase 6 extended scanners (T0)
     "UserSettingsScanner",
     "EventQueueScanner",
     "InsightsScanner",
+    # Phase 6 extended scanners (T1)
+    "SessionAnalyticsScanner",
+    "TodoScanner",
 ]

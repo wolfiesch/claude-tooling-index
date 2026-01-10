@@ -213,6 +213,41 @@ def _show_extended_stats():
             for pattern in im.recent_patterns[:5]:
                 click.echo(f"    - {pattern[:80]}...")
 
+    # Session Metrics (T1)
+    if extended.session_metrics:
+        sm = extended.session_metrics
+        click.echo(f"\n📁 Session Analytics:")
+        click.echo(f"  Total sessions: {sm.total_sessions}")
+        click.echo(f"  Avg prompts/session: {sm.prompts_per_session:.1f}")
+        project_count = len(sm.project_distribution) if sm.project_distribution else 0
+        click.echo(f"  Projects tracked: {project_count}")
+
+        if sm.top_projects:
+            click.echo(f"\n  📊 Top Projects by Sessions:")
+            for project, count in sm.top_projects[:10]:
+                click.echo(f"    {project}: {count}")
+
+        if sm.activity_by_day:
+            # Show last 7 days of activity
+            from datetime import datetime, timedelta
+            click.echo(f"\n  📅 Recent Activity (last 7 days):")
+            today = datetime.now().date()
+            for i in range(6, -1, -1):
+                day = today - timedelta(days=i)
+                day_key = day.strftime("%Y-%m-%d")
+                count = sm.activity_by_day.get(day_key, 0)
+                bar = "█" * min(count, 20)
+                click.echo(f"    {day_key}: {bar} ({count})")
+
+    # Task Metrics (T1)
+    if extended.task_metrics:
+        tm = extended.task_metrics
+        click.echo(f"\n✅ Task Analytics:")
+        click.echo(f"  Total tasks: {tm.total_tasks}")
+        click.echo(f"  Completed: {tm.completed} ({tm.completion_rate:.0%})")
+        click.echo(f"  Pending: {tm.pending}")
+        click.echo(f"  In Progress: {tm.in_progress}")
+
 
 @cli.command()
 @click.option("--type", help="Filter by component type")
