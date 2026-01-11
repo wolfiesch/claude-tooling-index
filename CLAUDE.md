@@ -116,6 +116,56 @@ tooling-index tui --platform all       # TUI with platform filter buttons
 - Components uniquely identified by `(platform, name, type)` tuple
 - Auto-migration adds `platform` column to existing databases
 
+## Testing
+
+### Running Tests
+
+```bash
+pytest                    # Run all tests
+pytest -v                 # Verbose output
+pytest tests/test_codex_scanner.py  # Run specific test file
+pytest -k "test_scan"     # Run tests matching pattern
+```
+
+### Test Structure
+
+```
+tests/
+├── __init__.py
+├── conftest.py              # Shared pytest fixtures
+├── test_codex_mcp_scanner.py  # CodexMCPScanner tests (14 tests)
+├── test_codex_scanner.py      # CodexToolingScanner tests (9 tests)
+└── test_multi_scanner.py      # MultiToolingScanner tests (12 tests)
+```
+
+### Key Fixtures (conftest.py)
+
+- `mock_codex_home`: Creates temporary `~/.codex` structure with `skills/` directory
+- `mock_claude_home`: Creates temporary `~/.claude` structure with all required directories and empty `mcp.json`
+- `sample_skill`: Creates a sample skill directory with valid `SKILL.md` frontmatter
+- `sample_config_toml`: Creates a sample Codex `config.toml` with MCP server definitions
+
+### Test Coverage
+
+**CodexMCPScanner** (`test_codex_mcp_scanner.py`):
+- `_redact_env_vars()` helper function (placeholder preservation, None handling)
+- Config parsing, error handling, metadata assignment
+
+**CodexToolingScanner** (`test_codex_scanner.py`):
+- Initialization, directory detection, skills + MCPs discovery
+- Parallel vs sequential scanning, error capture
+
+**MultiToolingScanner** (`test_multi_scanner.py`):
+- Platform selection (`claude`/`codex`/`all`), case insensitivity
+- Result merging, graceful handling of empty platforms
+- Parallel execution correctness
+
+### Testing Patterns
+
+- **Isolation**: All tests use `tmp_path` fixture + mocked directories (no real `~/.claude` or `~/.codex`)
+- **Monkeypatch**: Used to mock `Path.home()` for directory detection tests
+- **Graceful handling**: Scanners return empty results for missing directories rather than raising errors
+
 ## Database Location
 
 Default: `~/.claude/data/tooling_index.db`
