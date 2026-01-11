@@ -6,8 +6,9 @@ import pytest
 
 
 @pytest.fixture
-def mock_codex_home(tmp_path: Path) -> Path:
+def mock_codex_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Create a mock ~/.codex directory structure."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
     codex_home = tmp_path / ".codex"
     codex_home.mkdir()
 
@@ -19,8 +20,9 @@ def mock_codex_home(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def mock_claude_home(tmp_path: Path) -> Path:
+def mock_claude_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Create a mock ~/.claude directory structure."""
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
     claude_home = tmp_path / ".claude"
     claude_home.mkdir()
 

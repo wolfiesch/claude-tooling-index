@@ -1,11 +1,122 @@
 """MCP scanner - extracts metadata from all MCP sources."""
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from ..models import MCPMetadata
+
+_SENSITIVE_KEY_RE = re.compile(
+    r"(?i)(token|secret|password|api[_-]?key|bearer|authorization|auth|cookie)"
+)
+_HEX_TOKEN_RE = re.compile(r"(?i)^[0-9a-f]{32,}$")
+_B64_TOKEN_RE = re.compile(r"^[A-Za-z0-9+/=_-]{32,}$")
+
+
+def _redact_env_vars(env: dict) -> dict:
+    redacted = {}
+    for key, value in (env or {}).items():
+        if value is None:
+            redacted[str(key)] = ""
+            continue
+        if isinstance(value, str):
+            # Preserve placeholders and common non-secret path-like values for usability.
+            if value.startswith("${") and value.endswith("}"):
+                redacted[str(key)] = value
+                continue
+            if value.startswith(("/", "~", "./", "../")):
+                redacted[str(key)] = value
+                continue
+        redacted[str(key)] = "<redacted>"
+    return redacted
+
+
+def _redact_extra_config(value: object, *, key: str = "") -> object:
+    """Redact unknown MCP config fields conservatively to avoid leaking secrets."""
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+
+    key_str = str(key or "")
+    if _SENSITIVE_KEY_RE.search(key_str):
+        return "<redacted>"
+
+    if isinstance(value, str):
+        if value.startswith("${") and value.endswith("}"):
+            return value
+        if value.startswith(("/", "~", "./", "../")):
+            return value
+        # Heuristic: redact high-entropy token-like strings.
+        compact = value.strip()
+        if len(compact) >= 32 and (  # tokens tend to be long and space-free
+            _HEX_TOKEN_RE.match(compact) or _B64_TOKEN_RE.match(compact)
+        ):
+            return "<redacted>"
+        return value
+
+    if isinstance(value, list):
+        return [_redact_extra_config(v, key=key_str) for v in value]
+
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            out[str(k)] = _redact_extra_config(v, key=str(k))
+        return out
+
+    return str(value)
+
+
+def _pretty_path(path: Path) -> str:
+    """Render a path relative to the current user's home for display."""
+    try:
+        home = str(Path.home())
+        p = str(path)
+        if p.startswith(home):
+            return "~" + p[len(home) :]
+        return p
+    except Exception:  # pragma: no cover
+        return str(path)
+
+
+def _find_git_remote(path: Path) -> Optional[str]:
+    """Best-effort: find a git remote URL for a path by walking up to `.git/config`."""
+    try:
+        cur = path
+        if cur.is_file():
+            cur = cur.parent
+
+        # Walk up until filesystem root.
+        while True:
+            git_dir = cur / ".git"
+            config_path = git_dir / "config"
+            if git_dir.is_dir() and config_path.exists():
+                text = config_path.read_text(errors="ignore")
+                current_remote = None
+                remotes = {}
+                for line in text.splitlines():
+                    m = re.match(r'^\s*\[remote\s+"([^"]+)"\]\s*$', line)
+                    if m:
+                        current_remote = m.group(1)
+                        continue
+                    m2 = re.match(r"^\s*url\s*=\s*(.+)\s*$", line)
+                    if m2 and current_remote:
+                        remotes[current_remote] = m2.group(1).strip()
+                        continue
+
+                if "origin" in remotes:
+                    return remotes["origin"]
+                if remotes:
+                    # Return first remote by insertion order.
+                    return next(iter(remotes.values()))
+                return None
+
+            if cur.parent == cur:
+                break
+            cur = cur.parent
+    except Exception:
+        return None
+    return None
 
 
 class MCPScanner:
@@ -22,6 +133,7 @@ class MCPScanner:
         self.claude_json_path = Path.home() / ".claude.json"
         self.claude_home = Path.home() / ".claude"
         self.plugins_cache = self.claude_home / "plugins" / "cache"
+        self.redact_env = True
 
     def scan(self) -> List[MCPMetadata]:
         """Scan MCP servers from all config locations."""
@@ -68,6 +180,8 @@ class MCPScanner:
                         args=[],
                         env_vars={},
                         transport="native-messaging",
+                        source="builtin",
+                        source_detail=f"detected:{_pretty_path(chrome_host)}",
                         git_remote=None,
                     )
                 )
@@ -85,17 +199,34 @@ class MCPScanner:
             with open(self.claude_json_path, "r") as f:
                 data = json.load(f)
 
-            mcp_servers = data.get("mcpServers", {})
-            for name, config in mcp_servers.items():
-                if name in seen_names:
-                    continue
-                seen_names.add(name)
+            active_servers = data.get("mcpServers", {}) or {}
+            disabled_servers = data.get("mcpServersDisabled", {}) or {}
 
-                mcp = self._parse_mcp_config(
-                    name, config, self.claude_json_path, "user"
-                )
-                if mcp:
-                    mcps.append(mcp)
+            for status, mcp_servers in [
+                ("active", active_servers),
+                ("disabled", disabled_servers),
+            ]:
+                if not isinstance(mcp_servers, dict):
+                    continue
+                for name, config in mcp_servers.items():
+                    if name in seen_names:
+                        continue
+                    seen_names.add(name)
+
+                    mcp = self._parse_mcp_config(
+                        name,
+                        config,
+                        self.claude_json_path,
+                        "user",
+                        status=status,
+                        source_detail=(
+                            f"{_pretty_path(self.claude_json_path)}:"
+                            f"{'mcpServers' if status == 'active' else 'mcpServersDisabled'}."
+                            f"{name}"
+                        ),
+                    )
+                    if mcp:
+                        mcps.append(mcp)
 
         except (json.JSONDecodeError, OSError):
             pass
@@ -119,18 +250,35 @@ class MCPScanner:
             project_key = str(self.claude_home)
             if project_key in projects:
                 project_config = projects[project_key]
-                mcp_servers = project_config.get("mcpServers", {})
+                active_servers = project_config.get("mcpServers", {}) or {}
+                disabled_servers = project_config.get("mcpServersDisabled", {}) or {}
 
-                for name, config in mcp_servers.items():
-                    if name in seen_names:
+                for status, mcp_servers in [
+                    ("active", active_servers),
+                    ("disabled", disabled_servers),
+                ]:
+                    if not isinstance(mcp_servers, dict):
                         continue
-                    seen_names.add(name)
+                    for name, config in mcp_servers.items():
+                        if name in seen_names:
+                            continue
+                        seen_names.add(name)
 
-                    mcp = self._parse_mcp_config(
-                        name, config, self.claude_json_path, "local"
-                    )
-                    if mcp:
-                        mcps.append(mcp)
+                        mcp = self._parse_mcp_config(
+                            name,
+                            config,
+                            self.claude_json_path,
+                            "local",
+                            status=status,
+                            source_detail=(
+                                f"{_pretty_path(self.claude_json_path)}:"
+                                f'projects["{_pretty_path(Path(project_key))}"].'
+                                f"{'mcpServers' if status == 'active' else 'mcpServersDisabled'}."
+                                f"{name}"
+                            ),
+                        )
+                        if mcp:
+                            mcps.append(mcp)
 
         except (json.JSONDecodeError, OSError):
             pass
@@ -173,7 +321,13 @@ class MCPScanner:
                     config = self._resolve_plugin_vars(config, plugin_root)
 
                     mcp = self._parse_mcp_config(
-                        full_name, config, plugin_json, "plugin"
+                        full_name,
+                        config,
+                        plugin_json,
+                        "plugin",
+                        source_detail=(
+                            f"{_pretty_path(plugin_json)}:mcpServers.{mcp_name}"
+                        ),
                     )
                     if mcp:
                         mcps.append(mcp)
@@ -201,7 +355,13 @@ class MCPScanner:
                     config = self._resolve_plugin_vars(config, plugin_root)
 
                     mcp = self._parse_mcp_config(
-                        full_name, config, plugin_json, "plugin"
+                        full_name,
+                        config,
+                        plugin_json,
+                        "plugin",
+                        source_detail=(
+                            f"{_pretty_path(plugin_json)}:mcpServers.{mcp_name}"
+                        ),
                     )
                     if mcp:
                         mcps.append(mcp)
@@ -222,15 +382,34 @@ class MCPScanner:
             with open(self.mcp_json_path, "r") as f:
                 data = json.load(f)
 
-            mcp_servers = data.get("mcpServers", {})
-            for name, config in mcp_servers.items():
-                if name in seen_names:
-                    continue
-                seen_names.add(name)
+            active_servers = data.get("mcpServers", {}) or {}
+            disabled_servers = data.get("mcpServersDisabled", {}) or {}
 
-                mcp = self._parse_mcp_config(name, config, self.mcp_json_path, "legacy")
-                if mcp:
-                    mcps.append(mcp)
+            for status, mcp_servers in [
+                ("active", active_servers),
+                ("disabled", disabled_servers),
+            ]:
+                if not isinstance(mcp_servers, dict):
+                    continue
+                for name, config in mcp_servers.items():
+                    if name in seen_names:
+                        continue
+                    seen_names.add(name)
+
+                    mcp = self._parse_mcp_config(
+                        name,
+                        config,
+                        self.mcp_json_path,
+                        "legacy",
+                        status=status,
+                        source_detail=(
+                            f"{_pretty_path(self.mcp_json_path)}:"
+                            f"{'mcpServers' if status == 'active' else 'mcpServersDisabled'}."
+                            f"{name}"
+                        ),
+                    )
+                    if mcp:
+                        mcps.append(mcp)
 
         except (json.JSONDecodeError, OSError):
             pass
@@ -262,7 +441,13 @@ class MCPScanner:
                 plugin_root = mcp_json.parent
                 config = self._resolve_plugin_vars(config, plugin_root)
 
-                mcp = self._parse_mcp_config(full_name, config, mcp_json, "plugin")
+                mcp = self._parse_mcp_config(
+                    full_name,
+                    config,
+                    mcp_json,
+                    "plugin",
+                    source_detail=f"{_pretty_path(mcp_json)}:{mcp_name}",
+                )
                 if mcp:
                     mcps.append(mcp)
 
@@ -291,13 +476,30 @@ class MCPScanner:
         return resolved
 
     def _parse_mcp_config(
-        self, name: str, config: dict, config_path: Path, source: str
+        self,
+        name: str,
+        config: dict,
+        config_path: Path,
+        source: str,
+        *,
+        status: str = "active",
+        source_detail: str = "",
     ) -> MCPMetadata:
         """Parse a single MCP server configuration."""
         command = config.get("command", config.get("url", ""))
         args = config.get("args", [])
         env_vars = config.get("env", {})
         transport = config.get("transport", config.get("type", "stdio"))
+        config_extra = {}
+        try:
+            known_keys = {"command", "args", "env", "transport", "type", "url"}
+            config_extra = {
+                str(k): _redact_extra_config(v, key=str(k))
+                for k, v in (config or {}).items()
+                if str(k) not in known_keys
+            }
+        except Exception:
+            config_extra = {}
 
         # HTTP MCPs
         if config.get("url"):
@@ -307,7 +509,9 @@ class MCPScanner:
         # Detect origin
         origin = self._detect_origin(name, command, source)
 
-        status = "active"
+        env_vars_safe = {}
+        if isinstance(env_vars, dict):
+            env_vars_safe = _redact_env_vars(env_vars) if self.redact_env else env_vars
 
         try:
             last_modified = datetime.fromtimestamp(config_path.stat().st_mtime)
@@ -320,6 +524,8 @@ class MCPScanner:
         else:
             install_path = config_path
 
+        git_remote = _find_git_remote(install_path) if install_path else None
+
         return MCPMetadata(
             name=name,
             origin=origin,
@@ -328,9 +534,12 @@ class MCPScanner:
             install_path=install_path,
             command=command,
             args=args,
-            env_vars=env_vars,
+            env_vars=env_vars_safe,
             transport=transport,
-            git_remote=None,
+            source=source,
+            source_detail=source_detail,
+            git_remote=git_remote,
+            config_extra=config_extra,
         )
 
     def _detect_origin(self, name: str, command: str, source: str) -> str:

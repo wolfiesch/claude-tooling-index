@@ -2,6 +2,8 @@
 
 import json
 import sqlite3
+from dataclasses import fields as dataclass_fields
+from dataclasses import is_dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -248,32 +250,8 @@ class ToolingDatabase:
         current_time = datetime.now()
 
         for component in scan_result.all_components:
-            # Serialize full metadata to JSON
-            metadata_dict = {
-                "name": component.name,
-                "type": component.type,
-                "platform": getattr(component, "platform", "claude"),
-                "origin": component.origin,
-                "status": component.status,
-                "last_modified": component.last_modified.isoformat(),
-                "install_path": str(component.install_path),
-            }
-
-            # Add type-specific fields
-            if hasattr(component, "version"):
-                metadata_dict["version"] = component.version
-            if hasattr(component, "description"):
-                metadata_dict["description"] = component.description
-            if hasattr(component, "file_count"):
-                metadata_dict["file_count"] = component.file_count
-            if hasattr(component, "total_lines"):
-                metadata_dict["total_lines"] = component.total_lines
-            if hasattr(component, "performance_notes"):
-                metadata_dict["performance_notes"] = component.performance_notes
-            if hasattr(component, "marketplace"):
-                metadata_dict["marketplace"] = component.marketplace
-
-            metadata_json = json.dumps(metadata_dict)
+            metadata_dict = self._build_metadata_dict(component)
+            metadata_json = json.dumps(metadata_dict, default=str)
 
             # Check if component exists
             cursor.execute(
@@ -379,6 +357,53 @@ class ToolingDatabase:
             )
 
         self.conn.commit()
+
+    def _build_metadata_dict(self, component: Any) -> Dict[str, Any]:
+        """Serialize a component dataclass into a JSON-safe metadata dictionary.
+
+        The `components` table already stores some core attributes as dedicated
+        columns (platform/name/type/origin/status/version/install_path), but we
+        keep them in the metadata JSON as well for export/debugging consistency.
+        """
+        base: Dict[str, Any] = {
+            "name": getattr(component, "name", ""),
+            "type": getattr(component, "type", ""),
+            "platform": getattr(component, "platform", "claude"),
+            "origin": getattr(component, "origin", ""),
+            "status": getattr(component, "status", ""),
+            "last_modified": (
+                component.last_modified.isoformat()
+                if getattr(component, "last_modified", None)
+                else None
+            ),
+            "install_path": str(getattr(component, "install_path", "")),
+        }
+
+        # Populate remaining dataclass fields dynamically (best-effort).
+        if not is_dataclass(component):
+            return base
+
+        for f in dataclass_fields(component):
+            key = f.name
+            if key in base:
+                continue
+            try:
+                value = getattr(component, key)
+            except Exception:
+                continue
+
+            if value is None:
+                continue
+
+            # Normalize common non-JSON primitives.
+            if isinstance(value, datetime):
+                base[key] = value.isoformat()
+            elif isinstance(value, Path):
+                base[key] = str(value)
+            else:
+                base[key] = value
+
+        return base
 
     def track_invocation(
         self,
@@ -509,6 +534,108 @@ class ToolingDatabase:
             "most_used": most_used,
             "recent_installs": recent_installs,
             "performance_avg": performance_avg,
+        }
+
+    def get_component_usage(
+        self,
+        *,
+        platform: str,
+        name: str,
+        component_type: str,
+        days: int = 30,
+        recent_errors_limit: int = 3,
+    ) -> Dict[str, Any]:
+        """Get usage metrics for a specific component (best-effort).
+
+        Returns a stable dictionary even when the component has no usage data.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT id FROM components WHERE platform = ? AND name = ? AND type = ?",
+            (platform, name, component_type),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return {
+                "found": False,
+                "platform": platform,
+                "name": name,
+                "type": component_type,
+                "days": days,
+                "total_invocations": 0,
+            }
+
+        component_id = row["id"]
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) as total,
+                COUNT(DISTINCT session_id) as sessions,
+                SUM(CASE WHEN success THEN 1 ELSE 0 END) as successes,
+                SUM(CASE WHEN success THEN 0 ELSE 1 END) as failures,
+                AVG(duration_ms) as avg_duration_ms,
+                MAX(timestamp) as last_invoked
+            FROM invocations
+            WHERE component_id = ?
+            AND timestamp >= datetime('now', '-' || ? || ' days')
+            """,
+            (component_id, days),
+        )
+        stats = cursor.fetchone() or {}
+
+        # P95 duration: compute in Python from sorted durations.
+        cursor.execute(
+            """
+            SELECT duration_ms
+            FROM invocations
+            WHERE component_id = ?
+            AND duration_ms IS NOT NULL
+            AND timestamp >= datetime('now', '-' || ? || ' days')
+            ORDER BY duration_ms
+            """,
+            (component_id, days),
+        )
+        durations = [r["duration_ms"] for r in cursor.fetchall() if r["duration_ms"]]
+        p95 = None
+        if durations:
+            idx = int(round(0.95 * (len(durations) - 1)))
+            idx = max(0, min(idx, len(durations) - 1))
+            p95 = durations[idx]
+
+        cursor.execute(
+            """
+            SELECT timestamp, error_message
+            FROM invocations
+            WHERE component_id = ?
+            AND success = 0
+            AND error_message IS NOT NULL
+            ORDER BY timestamp DESC
+            LIMIT ?
+            """,
+            (component_id, recent_errors_limit),
+        )
+        recent_errors = [
+            {"timestamp": r["timestamp"], "error_message": r["error_message"]}
+            for r in cursor.fetchall()
+        ]
+
+        total = int(stats["total"] or 0)
+        successes = int(stats["successes"] or 0)
+        success_rate = (successes / total) if total else None
+
+        return {
+            "found": True,
+            "platform": platform,
+            "name": name,
+            "type": component_type,
+            "days": days,
+            "total_invocations": total,
+            "sessions": int(stats["sessions"] or 0),
+            "success_rate": success_rate,
+            "avg_duration_ms": stats["avg_duration_ms"],
+            "p95_duration_ms": p95,
+            "last_invoked": stats["last_invoked"],
+            "recent_errors": recent_errors,
         }
 
     def search_components(self, query: str) -> List[Dict[str, Any]]:

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""post_tool_use_tooling.py
+"""Python fallback hook for tooling-index.
 
-Python fallback hook for tracking skill and command invocations.
-Use this if you cannot compile the C++ version.
+Tracks skill and command invocations when the high-performance C++ hook is not
+available.
 
-Performance: ~50ms (vs <1ms for C++ version)
+Performance: ~50ms (vs <1ms for C++ version).
 
 To install:
   cp hooks/post_tool_use_tooling.py ~/.claude/hooks/
@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 def get_db_path() -> Path:
-    """Get the database path"""
+    """Get the default tooling-index database path."""
     return Path.home() / ".claude" / "data" / "tooling_index.db"
 
 
@@ -29,7 +29,7 @@ def track_invocation(
     duration_ms: int,
     success: bool,
 ):
-    """Track a component invocation in the database"""
+    """Track a component invocation in the database."""
     import sqlite3
 
     db_path = get_db_path()
@@ -42,8 +42,8 @@ def track_invocation(
 
         # Get component_id
         cursor.execute(
-            "SELECT id FROM components WHERE name = ? AND type = ? LIMIT 1",
-            (component_name, component_type),
+            "SELECT id FROM components WHERE platform = ? AND name = ? AND type = ? LIMIT 1",
+            ("claude", component_name, component_type),
         )
         row = cursor.fetchone()
 
@@ -70,6 +70,7 @@ def track_invocation(
 
 
 def main():
+    """Entry point for the `post_tool_use` hook."""
     # Parse tool data from environment
     tool_data_str = os.environ.get("TOOL_DATA", "{}")
     try:

@@ -133,8 +133,113 @@ class JSONExporter:
         if hasattr(component, "dependencies") and component.dependencies:
             data["dependencies"] = component.dependencies
 
+        if hasattr(component, "dependency_sources") and component.dependency_sources:
+            data["dependency_sources"] = component.dependency_sources
+
+        if hasattr(component, "frontmatter_extra") and component.frontmatter_extra:
+            data["frontmatter_extra"] = component.frontmatter_extra
+
+        if hasattr(component, "invocation_aliases") and component.invocation_aliases:
+            data["invocation_aliases"] = component.invocation_aliases
+
+        if (
+            hasattr(component, "invocation_arguments")
+            and getattr(component, "invocation_arguments", "")
+        ):
+            data["invocation_arguments"] = component.invocation_arguments
+
+        if (
+            hasattr(component, "invocation_instruction")
+            and getattr(component, "invocation_instruction", "")
+        ):
+            data["invocation_instruction"] = component.invocation_instruction
+
+        if hasattr(component, "references") and component.references:
+            data["references"] = component.references
+
+        if hasattr(component, "context_fork_hint") and component.context_fork_hint:
+            data["context_fork_hint"] = component.context_fork_hint
+
+        if hasattr(component, "when_to_use") and component.when_to_use:
+            data["when_to_use"] = component.when_to_use
+
+        if hasattr(component, "trigger_rules") and component.trigger_rules:
+            data["trigger_rules"] = component.trigger_rules
+
+        if hasattr(component, "detected_tools") and component.detected_tools:
+            data["detected_tools"] = component.detected_tools
+
+        if hasattr(component, "detected_toolkits") and component.detected_toolkits:
+            data["detected_toolkits"] = component.detected_toolkits
+
+        if hasattr(component, "inputs") and component.inputs:
+            data["inputs"] = component.inputs
+
+        if hasattr(component, "outputs") and component.outputs:
+            data["outputs"] = component.outputs
+
+        if hasattr(component, "safety_notes") and component.safety_notes:
+            data["safety_notes"] = component.safety_notes
+
+        if hasattr(component, "capability_tags") and component.capability_tags:
+            data["capability_tags"] = component.capability_tags
+
+        if hasattr(component, "inputs_schema") and component.inputs_schema:
+            data["inputs_schema"] = component.inputs_schema
+
+        if hasattr(component, "outputs_schema") and component.outputs_schema:
+            data["outputs_schema"] = component.outputs_schema
+
+        if hasattr(component, "examples") and component.examples:
+            data["examples"] = component.examples
+
+        if hasattr(component, "prerequisites") and component.prerequisites:
+            data["prerequisites"] = component.prerequisites
+
+        if hasattr(component, "gotchas") and component.gotchas:
+            data["gotchas"] = component.gotchas
+
+        if hasattr(component, "required_env_vars") and component.required_env_vars:
+            data["required_env_vars"] = component.required_env_vars
+
+        if hasattr(component, "trigger_types") and component.trigger_types:
+            data["trigger_types"] = component.trigger_types
+
+        if hasattr(component, "context_behavior") and component.context_behavior:
+            data["context_behavior"] = component.context_behavior
+
+        if hasattr(component, "side_effects") and component.side_effects:
+            data["side_effects"] = component.side_effects
+
+        if hasattr(component, "risk_level") and component.risk_level:
+            data["risk_level"] = component.risk_level
+
+        if hasattr(component, "depends_on_skills") and component.depends_on_skills:
+            data["depends_on_skills"] = component.depends_on_skills
+
+        if hasattr(component, "used_by_skills") and component.used_by_skills:
+            data["used_by_skills"] = component.used_by_skills
+
+        if hasattr(component, "llm_summary") and component.llm_summary:
+            data["llm_summary"] = component.llm_summary
+
+        if hasattr(component, "llm_tags") and component.llm_tags:
+            data["llm_tags"] = component.llm_tags
+
         if hasattr(component, "marketplace") and component.marketplace:
             data["marketplace"] = component.marketplace
+
+        if hasattr(component, "author") and component.author:
+            data["author"] = component.author
+
+        if hasattr(component, "homepage") and component.homepage:
+            data["homepage"] = component.homepage
+
+        if hasattr(component, "repository") and component.repository:
+            data["repository"] = component.repository
+
+        if hasattr(component, "license") and component.license:
+            data["license"] = component.license
 
         if hasattr(component, "provides_commands") and component.provides_commands:
             data["provides_commands"] = component.provides_commands
@@ -144,6 +249,8 @@ class JSONExporter:
 
         if hasattr(component, "trigger") and component.trigger:
             data["trigger"] = component.trigger
+        if hasattr(component, "trigger_event") and component.trigger_event:
+            data["trigger_event"] = component.trigger_event
 
         if hasattr(component, "language") and component.language:
             data["language"] = component.language
@@ -165,6 +272,27 @@ class JSONExporter:
 
         if hasattr(component, "transport") and component.transport:
             data["transport"] = component.transport
+
+        if hasattr(component, "source") and component.source:
+            data["source"] = component.source
+
+        if hasattr(component, "source_detail") and component.source_detail:
+            data["source_detail"] = component.source_detail
+
+        if hasattr(component, "git_remote") and component.git_remote:
+            data["git_remote"] = component.git_remote
+
+        if hasattr(component, "config_extra") and component.config_extra:
+            data["config_extra"] = component.config_extra
+
+        if hasattr(component, "shebang") and component.shebang:
+            data["shebang"] = component.shebang
+
+        if hasattr(component, "commands_detail") and component.commands_detail:
+            data["commands_detail"] = component.commands_detail
+
+        if hasattr(component, "mcps_detail") and component.mcps_detail:
+            data["mcps_detail"] = component.mcps_detail
 
         if component.error_message:
             data["error"] = component.error_message
