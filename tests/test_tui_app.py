@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+import claude_tooling_index.tui.app as tui_app
 from claude_tooling_index.models import ExtendedScanResult, ScanResult, SkillMetadata
-from claude_tooling_index.tui.app import ToolingIndexTUI
 
 
 class _DummyButton:
@@ -83,13 +83,10 @@ def test_tooling_index_tui_load_components_and_actions(monkeypatch, tmp_path: Pa
         def scan_extended(self):
             return extended
 
-    # Patch the scanner used by the TUI.
-    import claude_tooling_index.tui.app as tui_app
-
     monkeypatch.setattr(tui_app, "ToolingScanner", DummyScanner)
 
     # Create an instance without running Textual's App init.
-    app = object.__new__(ToolingIndexTUI)
+    app = object.__new__(tui_app.ToolingIndexTUI)
     app.platform = "claude"
     app.claude_home = tmp_path / ".claude"
     app.codex_home = tmp_path / ".codex"
@@ -137,7 +134,7 @@ def test_tooling_index_tui_load_components_and_actions(monkeypatch, tmp_path: Pa
     app.exit = lambda: None  # type: ignore[attr-defined]
 
     # Exercise load path.
-    ToolingIndexTUI._load_components(app)
+    tui_app.ToolingIndexTUI._load_components(app)
     assert component_list.loaded is True
     assert stats_panel.updated is True
     assert detail_view.cleared is True
@@ -146,14 +143,14 @@ def test_tooling_index_tui_load_components_and_actions(monkeypatch, tmp_path: Pa
     class _SearchEvent:
         query = "x"
 
-    ToolingIndexTUI.on_search_bar_search_changed(app, _SearchEvent())
+    tui_app.ToolingIndexTUI.on_search_bar_search_changed(app, _SearchEvent())
     assert component_list.text_filter == "x"
 
     # Exercise component selection handler.
     class _SelectEvent:
         component = skill
 
-    ToolingIndexTUI.on_component_list_component_selected(app, _SelectEvent())
+    tui_app.ToolingIndexTUI.on_component_list_component_selected(app, _SelectEvent())
     assert detail_view.last_component == skill
 
     # Exercise filter button handler.
@@ -161,21 +158,23 @@ def test_tooling_index_tui_load_components_and_actions(monkeypatch, tmp_path: Pa
         def __init__(self, button_id: str):
             self.button = _DummyButton(button_id)
 
-    ToolingIndexTUI.on_button_pressed(app, _PressedEvent("type-filter-skill"))
+    tui_app.ToolingIndexTUI.on_button_pressed(app, _PressedEvent("type-filter-skill"))
     assert component_list.type_filter == "skill"
 
-    ToolingIndexTUI.on_button_pressed(app, _PressedEvent("platform-filter-claude"))
+    tui_app.ToolingIndexTUI.on_button_pressed(
+        app, _PressedEvent("platform-filter-claude")
+    )
     assert component_list.platform_filter == "claude"
 
     # Exercise keybinding actions.
-    ToolingIndexTUI.action_filter_skill(app)
-    ToolingIndexTUI.action_filter_all(app)
-    ToolingIndexTUI.action_refresh(app)
-    ToolingIndexTUI.action_quit(app)
+    tui_app.ToolingIndexTUI.action_filter_skill(app)
+    tui_app.ToolingIndexTUI.action_filter_all(app)
+    tui_app.ToolingIndexTUI.action_refresh(app)
+    tui_app.ToolingIndexTUI.action_quit(app)
 
 
 def test_tooling_index_tui_update_empty_state_codex_message(tmp_path: Path) -> None:
-    app = object.__new__(ToolingIndexTUI)
+    app = object.__new__(tui_app.ToolingIndexTUI)
     app.scan_result = ScanResult(errors=["[codex] scan failed: boom"])
 
     class _List:
@@ -201,7 +200,7 @@ def test_tooling_index_tui_update_empty_state_codex_message(tmp_path: Path) -> N
 
     app.query_one = _query_one  # type: ignore[attr-defined]
 
-    ToolingIndexTUI._update_empty_state(app)
+    tui_app.ToolingIndexTUI._update_empty_state(app)
     assert detail_view.message is not None
     assert "No Codex components found." in detail_view.message
     assert "[codex] scan failed" in detail_view.message

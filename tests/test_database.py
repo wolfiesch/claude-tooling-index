@@ -87,8 +87,18 @@ def test_track_invocation_and_usage_stats(tmp_path: Path) -> None:
                 success=True,
             )
 
+        db.track_invocation(
+            component_name="test-skill",
+            component_type="skill",
+            session_id="sess-2",
+            platform="claude",
+            duration_ms=40,
+            success=False,
+            error_message="boom",
+        )
+
         stats = db.get_usage_stats(days=30)
-        assert stats["total_invocations"] == 3
+        assert stats["total_invocations"] == 4
         assert stats["most_used"][0]["name"] == "test-skill"
         assert any("claude:skill:test-skill" in k for k in stats["performance_avg"].keys())
 
@@ -99,10 +109,92 @@ def test_track_invocation_and_usage_stats(tmp_path: Path) -> None:
             days=30,
         )
         assert per["found"] is True
-        assert per["total_invocations"] == 3
-        assert per["sessions"] == 1
-        assert per["success_rate"] == 1.0
-        assert per["p95_duration_ms"] in {10, 20, 30}
+        assert per["total_invocations"] == 4
+        assert per["sessions"] == 2
+        assert per["success_rate"] == 0.75
+        assert len(per["recent_errors"]) >= 1
+        assert per["p95_duration_ms"] == 40
+    finally:
+        db.close()
+
+
+def test_build_metadata_dict_handles_non_dataclass(tmp_path: Path) -> None:
+    db_path = tmp_path / "tooling.sqlite"
+    db = ToolingDatabase(db_path=db_path)
+    try:
+        class _Obj:
+            name = "x"
+            type = "skill"
+            platform = "claude"
+            origin = "in-house"
+            status = "active"
+            last_modified = datetime(2026, 1, 11, 0, 0, 0)
+            install_path = tmp_path / "x"
+
+        meta = db._build_metadata_dict(_Obj())  # type: ignore[attr-defined]
+        assert meta["name"] == "x"
+        assert meta["platform"] == "claude"
+        assert meta["install_path"].endswith("/x") or meta["install_path"].endswith("\\x")
+
+        missing = db.get_component_usage(
+            platform="claude",
+            name="does-not-exist",
+            component_type="skill",
+            days=30,
+        )
+        assert missing["found"] is False
+    finally:
+        db.close()
+
+
+def test_rebuilds_fts_when_legacy_external_content_table(tmp_path: Path) -> None:
+    db_path = tmp_path / "legacy_fts.sqlite"
+    conn = sqlite3.connect(str(db_path))
+    try:
+        conn.execute(
+            """
+            CREATE TABLE components (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                platform TEXT NOT NULL DEFAULT 'claude',
+                name TEXT NOT NULL,
+                type TEXT NOT NULL,
+                origin TEXT,
+                status TEXT,
+                version TEXT,
+                install_path TEXT,
+                first_seen DATETIME NOT NULL,
+                last_seen DATETIME NOT NULL,
+                metadata_json TEXT,
+                UNIQUE(platform, name, type)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE VIRTUAL TABLE components_fts USING fts5(
+                name,
+                description,
+                keywords,
+                content=components
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO components
+            (platform, name, type, origin, status, version, install_path, first_seen, last_seen, metadata_json)
+            VALUES ('claude', 'x', 'skill', 'in-house', 'active', '1.0.0', '/tmp', datetime('now'), datetime('now'), '{"description":"d"}')
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    db = ToolingDatabase(db_path=db_path)
+    try:
+        # Ensure the DB initializes and the FTS table is usable after rebuild.
+        results = db.search_components("d")
+        assert any(r.get("name") == "x" for r in results)
     finally:
         db.close()
 
@@ -134,7 +226,14 @@ def test_migrates_old_components_schema_adds_platform(tmp_path: Path) -> None:
             """
             INSERT INTO components
             (name, type, origin, status, version, install_path, first_seen, last_seen, metadata_json)
-            VALUES ('legacy-skill', 'skill', 'in-house', 'active', '1.0.0', '/tmp', datetime('now'), datetime('now'), '{}')
+            VALUES ('legacy-skill', 'skill', 'in-house', 'active', '1.0.0', '/tmp', datetime('now'), datetime('now'), '{')
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO components
+            (name, type, origin, status, version, install_path, first_seen, last_seen, metadata_json)
+            VALUES ('legacy-skill-2', 'skill', 'in-house', 'active', '1.0.0', '/tmp', datetime('now'), datetime('now'), '{"description":"x"}')
             """
         )
         conn.commit()
@@ -144,8 +243,8 @@ def test_migrates_old_components_schema_adds_platform(tmp_path: Path) -> None:
     db = ToolingDatabase(db_path=db_path)
     try:
         rows = db.get_components()
-        assert len(rows) == 1
-        assert rows[0]["name"] == "legacy-skill"
-        assert rows[0]["platform"] == "claude"
+        assert len(rows) == 2
+        assert {r["name"] for r in rows} == {"legacy-skill", "legacy-skill-2"}
+        assert {r["platform"] for r in rows} == {"claude"}
     finally:
         db.close()

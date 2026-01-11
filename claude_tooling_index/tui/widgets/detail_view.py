@@ -362,273 +362,11 @@ class DetailView(VerticalScroll):
 
         # Skill invocation + references (heuristic)
         if comp_type == "skill":
-            aliases = getattr(component, "invocation_aliases", None) or []
-            args = getattr(component, "invocation_arguments", None) or ""
-            instruction = getattr(component, "invocation_instruction", None) or ""
-            refs = getattr(component, "references", None) or {}
-            context_hint = getattr(component, "context_fork_hint", None) or ""
-            when_to_use = getattr(component, "when_to_use", None) or ""
-            trigger_rules = getattr(component, "trigger_rules", None) or []
-            detected_tools = getattr(component, "detected_tools", None) or {}
-            detected_toolkits = getattr(component, "detected_toolkits", None) or []
-            inputs = getattr(component, "inputs", None) or []
-            outputs = getattr(component, "outputs", None) or []
-            safety_notes = getattr(component, "safety_notes", None) or ""
-            capability_tags = getattr(component, "capability_tags", None) or []
-            side_effects = getattr(component, "side_effects", None) or []
-            required_env_vars = getattr(component, "required_env_vars", None) or []
-            prerequisites = getattr(component, "prerequisites", None) or []
-            gotchas = getattr(component, "gotchas", None) or []
-            examples = getattr(component, "examples", None) or []
-            trigger_types = getattr(component, "trigger_types", None) or []
-            context_behavior = getattr(component, "context_behavior", None) or ""
-            depends_on = getattr(component, "depends_on_skills", None) or []
-            used_by = getattr(component, "used_by_skills", None) or []
-
-            if aliases or args or instruction:
-                content.append("")
-                content.append(Text("Invocation", style=f"bold underline {claude_orange}"))
-                if aliases:
-                    content.append(Text(f"  • Aliases: {', '.join(aliases)}"))
-                if args:
-                    content.append(Text(f"  • Arguments: {args}"))
-                if instruction:
-                    content.append(Text(f"  • Instruction: {instruction}"))
-
-            if isinstance(refs, dict) and (refs.get("files") or refs.get("skills")):
-                content.append("")
-                content.append(Text("References", style=f"bold underline {claude_orange}"))
-                for fref in refs.get("files") or []:
-                    ok = self._reference_file_exists(component, fref)
-                    mark = "✓" if ok else "✗"
-                    style = None if ok else "dim"
-                    content.append(Text(f"  • {mark} {fref}", style=style))
-                for sref in refs.get("skills") or []:
-                    status = self._reference_skill_status(component, sref)
-                    mark = "✓" if status else "✗"
-                    suffix = f" ({status})" if status else ""
-                    style = None if status else "dim"
-                    content.append(Text(f"  • {mark} ${sref}{suffix}", style=style))
-
-            if context_hint:
-                content.append("")
-                content.append(Text("Context Hint", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {context_hint}", style="dim"))
-
-            if when_to_use:
-                content.append("")
-                content.append(Text("When To Use", style=f"bold underline {claude_orange}"))
-                for line in when_to_use.splitlines():
-                    content.append(Text(f"  • {line.strip()}"))
-
-            if trigger_rules:
-                content.append("")
-                content.append(Text("Trigger Rules", style=f"bold underline {claude_orange}"))
-                for rule in trigger_rules:
-                    content.append(Text(f"  • {rule}"))
-
-            if detected_toolkits:
-                content.append("")
-                content.append(Text("Toolkits", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(detected_toolkits)}"))
-
-            if isinstance(detected_tools, dict) and detected_tools:
-                content.append("")
-                content.append(Text("Tools", style=f"bold underline {claude_orange}"))
-                for key in ["mcp_tools", "composio_tools"]:
-                    items = detected_tools.get(key) or []
-                    if not items:
-                        continue
-                    label = "MCP" if key == "mcp_tools" else "Composio"
-                    content.append(Text(f"  • {label}: {len(items)}", style="dim"))
-                    for t in items[:15]:
-                        content.append(Text(f"    - {t}"))
-
-            if capability_tags:
-                content.append("")
-                content.append(Text("Capabilities", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(capability_tags)}"))
-
-            if side_effects:
-                content.append("")
-                content.append(Text("Side Effects", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(side_effects)}"))
-
-            if trigger_types:
-                content.append("")
-                content.append(Text("Trigger Types", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(trigger_types)}"))
-
-            if context_behavior and context_behavior != "unknown":
-                content.append("")
-                content.append(Text("Context Behavior", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {context_behavior}", style="dim"))
-
-            if depends_on:
-                content.append("")
-                content.append(Text("Depends On", style=f"bold underline {claude_orange}"))
-                for name in depends_on[:25]:
-                    content.append(Text(f"  • {name}"))
-
-            if used_by:
-                content.append("")
-                content.append(Text("Used By", style=f"bold underline {claude_orange}"))
-                for name in used_by[:25]:
-                    content.append(Text(f"  • {name}"))
-
-            if required_env_vars:
-                content.append("")
-                content.append(Text("Required Env", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(required_env_vars)}"))
-
-            if prerequisites:
-                content.append("")
-                content.append(Text("Prerequisites", style=f"bold underline {claude_orange}"))
-                for item in prerequisites[:15]:
-                    content.append(Text(f"  • {item}"))
-
-            if gotchas:
-                content.append("")
-                content.append(Text("Gotchas", style=f"bold underline {claude_orange}"))
-                for item in gotchas[:15]:
-                    content.append(Text(f"  • {item}", style="dim"))
-
-            if examples:
-                content.append("")
-                content.append(Text("Examples", style=f"bold underline {claude_orange}"))
-                for ex in examples[:2]:
-                    content.append(Text(ex, style="dim"))
-                    content.append(Text(""))
+            self._append_skill_sections(content, component, claude_orange)
 
         # Command rich metadata
         if comp_type == "command":
-            aliases = getattr(component, "invocation_aliases", None) or []
-            args = getattr(component, "invocation_arguments", None) or ""
-            instruction = getattr(component, "invocation_instruction", None) or ""
-            refs = getattr(component, "references", None) or {}
-            detected_tools = getattr(component, "detected_tools", None) or {}
-            detected_toolkits = getattr(component, "detected_toolkits", None) or []
-            capability_tags = getattr(component, "capability_tags", None) or []
-            inputs = getattr(component, "inputs", None) or []
-            outputs = getattr(component, "outputs", None) or []
-            safety_notes = getattr(component, "safety_notes", None) or ""
-            required_env_vars = getattr(component, "required_env_vars", None) or []
-            prerequisites = getattr(component, "prerequisites", None) or []
-            gotchas = getattr(component, "gotchas", None) or []
-            examples = getattr(component, "examples", None) or []
-            side_effects = getattr(component, "side_effects", None) or []
-
-            if aliases or args or instruction:
-                content.append("")
-                content.append(Text("Invocation", style=f"bold underline {claude_orange}"))
-                if aliases:
-                    content.append(Text(f"  • Aliases: {', '.join(aliases)}"))
-                if args:
-                    content.append(Text(f"  • Arguments: {args}"))
-                if instruction:
-                    content.append(Text(f"  • Instruction: {instruction}"))
-
-            if isinstance(refs, dict) and (refs.get("files") or refs.get("skills")):
-                content.append("")
-                content.append(Text("References", style=f"bold underline {claude_orange}"))
-                for fref in refs.get("files") or []:
-                    ok = self._reference_file_exists(component, fref)
-                    mark = "✓" if ok else "✗"
-                    style = None if ok else "dim"
-                    content.append(Text(f"  • {mark} {fref}", style=style))
-                for sref in refs.get("skills") or []:
-                    status = self._reference_skill_status(component, sref)
-                    mark = "✓" if status else "✗"
-                    suffix = f" ({status})" if status else ""
-                    style = None if status else "dim"
-                    content.append(Text(f"  • {mark} ${sref}{suffix}", style=style))
-
-            if capability_tags:
-                content.append("")
-                content.append(Text("Capabilities", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(capability_tags)}"))
-
-            if side_effects:
-                content.append("")
-                content.append(Text("Side Effects", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(side_effects)}"))
-
-            if detected_toolkits:
-                content.append("")
-                content.append(Text("Toolkits", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(detected_toolkits)}"))
-
-            if isinstance(detected_tools, dict) and detected_tools:
-                content.append("")
-                content.append(Text("Tools", style=f"bold underline {claude_orange}"))
-                for key in ["mcp_tools", "composio_tools"]:
-                    items = detected_tools.get(key) or []
-                    if not items:
-                        continue
-                    label = "MCP" if key == "mcp_tools" else "Composio"
-                    content.append(Text(f"  • {label}: {len(items)}", style="dim"))
-                    for t in items[:10]:
-                        content.append(Text(f"    - {t}"))
-
-            if required_env_vars:
-                content.append("")
-                content.append(Text("Required Env", style=f"bold underline {claude_orange}"))
-                content.append(Text(f"  • {', '.join(required_env_vars)}"))
-
-            if prerequisites:
-                content.append("")
-                content.append(Text("Prerequisites", style=f"bold underline {claude_orange}"))
-                for item in prerequisites[:10]:
-                    content.append(Text(f"  • {item}"))
-
-            if gotchas:
-                content.append("")
-                content.append(Text("Gotchas", style=f"bold underline {claude_orange}"))
-                for item in gotchas[:10]:
-                    content.append(Text(f"  • {item}", style="dim"))
-
-            if inputs:
-                content.append("")
-                content.append(Text("Inputs", style=f"bold underline {claude_orange}"))
-                for item in inputs[:10]:
-                    content.append(Text(f"  • {item}"))
-
-            if outputs:
-                content.append("")
-                content.append(Text("Outputs", style=f"bold underline {claude_orange}"))
-                for item in outputs[:10]:
-                    content.append(Text(f"  • {item}"))
-
-            if safety_notes:
-                content.append("")
-                content.append(Text("Safety", style=f"bold underline {claude_orange}"))
-                for line in safety_notes.splitlines():
-                    content.append(Text(f"  • {line.strip()}", style="dim"))
-
-            if examples:
-                content.append("")
-                content.append(Text("Examples", style=f"bold underline {claude_orange}"))
-                for ex in examples[:2]:
-                    content.append(Text(ex, style="dim"))
-                    content.append(Text(""))
-
-            if inputs:
-                content.append("")
-                content.append(Text("Inputs", style=f"bold underline {claude_orange}"))
-                for item in inputs[:15]:
-                    content.append(Text(f"  • {item}"))
-
-            if outputs:
-                content.append("")
-                content.append(Text("Outputs", style=f"bold underline {claude_orange}"))
-                for item in outputs[:15]:
-                    content.append(Text(f"  • {item}"))
-
-            if safety_notes:
-                content.append("")
-                content.append(Text("Safety", style=f"bold underline {claude_orange}"))
-                for line in safety_notes.splitlines():
-                    content.append(Text(f"  • {line.strip()}", style="dim"))
+            self._append_command_sections(content, component, claude_orange)
 
         # Plugin provides
         if comp_type == "plugin":
@@ -756,6 +494,259 @@ class DetailView(VerticalScroll):
             subtitle=f"[dim]{comp_type}[/dim]",
         )
 
+    def _append_skill_sections(
+        self, content: list, component: Any, claude_orange: str
+    ) -> None:
+        aliases = getattr(component, "invocation_aliases", None) or []
+        args = getattr(component, "invocation_arguments", None) or ""
+        instruction = getattr(component, "invocation_instruction", None) or ""
+        refs = getattr(component, "references", None) or {}
+        context_hint = getattr(component, "context_fork_hint", None) or ""
+        when_to_use = getattr(component, "when_to_use", None) or ""
+        trigger_rules = getattr(component, "trigger_rules", None) or []
+        detected_tools = getattr(component, "detected_tools", None) or {}
+        detected_toolkits = getattr(component, "detected_toolkits", None) or []
+        capability_tags = getattr(component, "capability_tags", None) or []
+        side_effects = getattr(component, "side_effects", None) or []
+        required_env_vars = getattr(component, "required_env_vars", None) or []
+        prerequisites = getattr(component, "prerequisites", None) or []
+        gotchas = getattr(component, "gotchas", None) or []
+        examples = getattr(component, "examples", None) or []
+        trigger_types = getattr(component, "trigger_types", None) or []
+        context_behavior = getattr(component, "context_behavior", None) or ""
+        depends_on = getattr(component, "depends_on_skills", None) or []
+        used_by = getattr(component, "used_by_skills", None) or []
+
+        if aliases or args or instruction:
+            content.append("")
+            content.append(Text("Invocation", style=f"bold underline {claude_orange}"))
+            if aliases:
+                content.append(Text(f"  • Aliases: {', '.join(aliases)}"))
+            if args:
+                content.append(Text(f"  • Arguments: {args}"))
+            if instruction:
+                content.append(Text(f"  • Instruction: {instruction}"))
+
+        if isinstance(refs, dict) and (refs.get("files") or refs.get("skills")):
+            content.append("")
+            content.append(Text("References", style=f"bold underline {claude_orange}"))
+            for fref in refs.get("files") or []:
+                ok = self._reference_file_exists(component, fref)
+                mark = "✓" if ok else "✗"
+                style = None if ok else "dim"
+                content.append(Text(f"  • {mark} {fref}", style=style))
+            for sref in refs.get("skills") or []:
+                status = self._reference_skill_status(component, sref)
+                mark = "✓" if status else "✗"
+                suffix = f" ({status})" if status else ""
+                style = None if status else "dim"
+                content.append(Text(f"  • {mark} ${sref}{suffix}", style=style))
+
+        if context_hint:
+            content.append("")
+            content.append(Text("Context Hint", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {context_hint}", style="dim"))
+
+        if when_to_use:
+            content.append("")
+            content.append(Text("When To Use", style=f"bold underline {claude_orange}"))
+            for line in when_to_use.splitlines():
+                content.append(Text(f"  • {line.strip()}"))
+
+        if trigger_rules:
+            content.append("")
+            content.append(Text("Trigger Rules", style=f"bold underline {claude_orange}"))
+            for rule in trigger_rules:
+                content.append(Text(f"  • {rule}"))
+
+        if detected_toolkits:
+            content.append("")
+            content.append(Text("Toolkits", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(detected_toolkits)}"))
+
+        if isinstance(detected_tools, dict) and detected_tools:
+            content.append("")
+            content.append(Text("Tools", style=f"bold underline {claude_orange}"))
+            for key in ["mcp_tools", "composio_tools"]:
+                items = detected_tools.get(key) or []
+                if not items:
+                    continue
+                label = "MCP" if key == "mcp_tools" else "Composio"
+                content.append(Text(f"  • {label}: {len(items)}", style="dim"))
+                for t in items[:15]:
+                    content.append(Text(f"    - {t}"))
+
+        if capability_tags:
+            content.append("")
+            content.append(Text("Capabilities", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(capability_tags)}"))
+
+        if side_effects:
+            content.append("")
+            content.append(Text("Side Effects", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(side_effects)}"))
+
+        if trigger_types:
+            content.append("")
+            content.append(Text("Trigger Types", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(trigger_types)}"))
+
+        if context_behavior and context_behavior != "unknown":
+            content.append("")
+            content.append(
+                Text("Context Behavior", style=f"bold underline {claude_orange}")
+            )
+            content.append(Text(f"  • {context_behavior}", style="dim"))
+
+        if depends_on:
+            content.append("")
+            content.append(Text("Depends On", style=f"bold underline {claude_orange}"))
+            for name in depends_on[:25]:
+                content.append(Text(f"  • {name}"))
+
+        if used_by:
+            content.append("")
+            content.append(Text("Used By", style=f"bold underline {claude_orange}"))
+            for name in used_by[:25]:
+                content.append(Text(f"  • {name}"))
+
+        if required_env_vars:
+            content.append("")
+            content.append(Text("Required Env", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(required_env_vars)}"))
+
+        if prerequisites:
+            content.append("")
+            content.append(Text("Prerequisites", style=f"bold underline {claude_orange}"))
+            for item in prerequisites[:15]:
+                content.append(Text(f"  • {item}"))
+
+        if gotchas:
+            content.append("")
+            content.append(Text("Gotchas", style=f"bold underline {claude_orange}"))
+            for item in gotchas[:15]:
+                content.append(Text(f"  • {item}", style="dim"))
+
+        if examples:
+            content.append("")
+            content.append(Text("Examples", style=f"bold underline {claude_orange}"))
+            for ex in examples[:2]:
+                content.append(Text(ex, style="dim"))
+                content.append(Text(""))
+
+    def _append_command_sections(
+        self, content: list, component: Any, claude_orange: str
+    ) -> None:
+        aliases = getattr(component, "invocation_aliases", None) or []
+        args = getattr(component, "invocation_arguments", None) or ""
+        instruction = getattr(component, "invocation_instruction", None) or ""
+        refs = getattr(component, "references", None) or {}
+        detected_tools = getattr(component, "detected_tools", None) or {}
+        detected_toolkits = getattr(component, "detected_toolkits", None) or []
+        capability_tags = getattr(component, "capability_tags", None) or []
+        inputs = getattr(component, "inputs", None) or []
+        outputs = getattr(component, "outputs", None) or []
+        safety_notes = getattr(component, "safety_notes", None) or ""
+        required_env_vars = getattr(component, "required_env_vars", None) or []
+        prerequisites = getattr(component, "prerequisites", None) or []
+        gotchas = getattr(component, "gotchas", None) or []
+        examples = getattr(component, "examples", None) or []
+        side_effects = getattr(component, "side_effects", None) or []
+
+        if aliases or args or instruction:
+            content.append("")
+            content.append(Text("Invocation", style=f"bold underline {claude_orange}"))
+            if aliases:
+                content.append(Text(f"  • Aliases: {', '.join(aliases)}"))
+            if args:
+                content.append(Text(f"  • Arguments: {args}"))
+            if instruction:
+                content.append(Text(f"  • Instruction: {instruction}"))
+
+        if isinstance(refs, dict) and (refs.get("files") or refs.get("skills")):
+            content.append("")
+            content.append(Text("References", style=f"bold underline {claude_orange}"))
+            for fref in refs.get("files") or []:
+                ok = self._reference_file_exists(component, fref)
+                mark = "✓" if ok else "✗"
+                style = None if ok else "dim"
+                content.append(Text(f"  • {mark} {fref}", style=style))
+            for sref in refs.get("skills") or []:
+                status = self._reference_skill_status(component, sref)
+                mark = "✓" if status else "✗"
+                suffix = f" ({status})" if status else ""
+                style = None if status else "dim"
+                content.append(Text(f"  • {mark} ${sref}{suffix}", style=style))
+
+        if capability_tags:
+            content.append("")
+            content.append(Text("Capabilities", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(capability_tags)}"))
+
+        if side_effects:
+            content.append("")
+            content.append(Text("Side Effects", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(side_effects)}"))
+
+        if detected_toolkits:
+            content.append("")
+            content.append(Text("Toolkits", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(detected_toolkits)}"))
+
+        if isinstance(detected_tools, dict) and detected_tools:
+            content.append("")
+            content.append(Text("Tools", style=f"bold underline {claude_orange}"))
+            for key in ["mcp_tools", "composio_tools"]:
+                items = detected_tools.get(key) or []
+                if not items:
+                    continue
+                label = "MCP" if key == "mcp_tools" else "Composio"
+                content.append(Text(f"  • {label}: {len(items)}", style="dim"))
+                for t in items[:10]:
+                    content.append(Text(f"    - {t}"))
+
+        if required_env_vars:
+            content.append("")
+            content.append(Text("Required Env", style=f"bold underline {claude_orange}"))
+            content.append(Text(f"  • {', '.join(required_env_vars)}"))
+
+        if prerequisites:
+            content.append("")
+            content.append(Text("Prerequisites", style=f"bold underline {claude_orange}"))
+            for item in prerequisites[:15]:
+                content.append(Text(f"  • {item}"))
+
+        if gotchas:
+            content.append("")
+            content.append(Text("Gotchas", style=f"bold underline {claude_orange}"))
+            for item in gotchas[:15]:
+                content.append(Text(f"  • {item}", style="dim"))
+
+        if inputs:
+            content.append("")
+            content.append(Text("Inputs", style=f"bold underline {claude_orange}"))
+            for item in inputs[:15]:
+                content.append(Text(f"  • {item}"))
+
+        if outputs:
+            content.append("")
+            content.append(Text("Outputs", style=f"bold underline {claude_orange}"))
+            for item in outputs[:15]:
+                content.append(Text(f"  • {item}"))
+
+        if safety_notes:
+            content.append("")
+            content.append(Text("Safety", style=f"bold underline {claude_orange}"))
+            for line in safety_notes.splitlines():
+                content.append(Text(f"  • {line.strip()}", style="dim"))
+
+        if examples:
+            content.append("")
+            content.append(Text("Examples", style=f"bold underline {claude_orange}"))
+            for ex in examples[:2]:
+                content.append(Text(ex, style="dim"))
+                content.append(Text(""))
+
     def _format_size(self, size_bytes: int) -> str:
         """Format file size in a human-readable format."""
         if size_bytes < 1024:
@@ -855,22 +846,3 @@ class DetailView(VerticalScroll):
                 return str(getattr(skill, "platform", "claude"))
 
         return ""
-
-        tracker = getattr(app, "analytics_tracker", None)
-        if not tracker:
-            return None
-
-        try:
-            platform = getattr(component, "platform", "claude")
-            name = getattr(component, "name", "")
-            comp_type = getattr(component, "type", "unknown")
-            if not name or not comp_type:
-                return None
-            return tracker.get_component_usage(
-                platform=platform,
-                name=name,
-                component_type=comp_type,
-                days=30,
-            )
-        except Exception:
-            return None

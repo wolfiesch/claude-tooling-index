@@ -2,6 +2,8 @@
 
 import json
 import sqlite3
+from dataclasses import fields as dataclass_fields
+from dataclasses import is_dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -248,136 +250,8 @@ class ToolingDatabase:
         current_time = datetime.now()
 
         for component in scan_result.all_components:
-            # Serialize full metadata to JSON
-            metadata_dict = {
-                "name": component.name,
-                "type": component.type,
-                "platform": getattr(component, "platform", "claude"),
-                "origin": component.origin,
-                "status": component.status,
-                "last_modified": component.last_modified.isoformat(),
-                "install_path": str(component.install_path),
-            }
-
-            # Add type-specific fields
-            if hasattr(component, "version"):
-                metadata_dict["version"] = component.version
-            if hasattr(component, "description"):
-                metadata_dict["description"] = component.description
-            if hasattr(component, "file_count"):
-                metadata_dict["file_count"] = component.file_count
-            if hasattr(component, "total_lines"):
-                metadata_dict["total_lines"] = component.total_lines
-            if hasattr(component, "performance_notes"):
-                metadata_dict["performance_notes"] = component.performance_notes
-            if hasattr(component, "marketplace"):
-                metadata_dict["marketplace"] = component.marketplace
-            if hasattr(component, "author"):
-                metadata_dict["author"] = component.author
-            if hasattr(component, "homepage"):
-                metadata_dict["homepage"] = component.homepage
-            if hasattr(component, "repository"):
-                metadata_dict["repository"] = component.repository
-            if hasattr(component, "license"):
-                metadata_dict["license"] = component.license
-            if hasattr(component, "dependencies"):
-                metadata_dict["dependencies"] = component.dependencies
-            if hasattr(component, "dependency_sources"):
-                metadata_dict["dependency_sources"] = component.dependency_sources
-            if hasattr(component, "frontmatter_extra"):
-                metadata_dict["frontmatter_extra"] = component.frontmatter_extra
-            if hasattr(component, "invocation_aliases"):
-                metadata_dict["invocation_aliases"] = component.invocation_aliases
-            if hasattr(component, "invocation_arguments"):
-                metadata_dict["invocation_arguments"] = component.invocation_arguments
-            if hasattr(component, "invocation_instruction"):
-                metadata_dict["invocation_instruction"] = component.invocation_instruction
-            if hasattr(component, "references"):
-                metadata_dict["references"] = component.references
-            if hasattr(component, "context_fork_hint"):
-                metadata_dict["context_fork_hint"] = component.context_fork_hint
-            if hasattr(component, "when_to_use"):
-                metadata_dict["when_to_use"] = component.when_to_use
-            if hasattr(component, "trigger_rules"):
-                metadata_dict["trigger_rules"] = component.trigger_rules
-            if hasattr(component, "detected_tools"):
-                metadata_dict["detected_tools"] = component.detected_tools
-            if hasattr(component, "detected_toolkits"):
-                metadata_dict["detected_toolkits"] = component.detected_toolkits
-            if hasattr(component, "inputs"):
-                metadata_dict["inputs"] = component.inputs
-            if hasattr(component, "outputs"):
-                metadata_dict["outputs"] = component.outputs
-            if hasattr(component, "safety_notes"):
-                metadata_dict["safety_notes"] = component.safety_notes
-            if hasattr(component, "capability_tags"):
-                metadata_dict["capability_tags"] = component.capability_tags
-            if hasattr(component, "inputs_schema"):
-                metadata_dict["inputs_schema"] = component.inputs_schema
-            if hasattr(component, "outputs_schema"):
-                metadata_dict["outputs_schema"] = component.outputs_schema
-            if hasattr(component, "examples"):
-                metadata_dict["examples"] = component.examples
-            if hasattr(component, "prerequisites"):
-                metadata_dict["prerequisites"] = component.prerequisites
-            if hasattr(component, "gotchas"):
-                metadata_dict["gotchas"] = component.gotchas
-            if hasattr(component, "required_env_vars"):
-                metadata_dict["required_env_vars"] = component.required_env_vars
-            if hasattr(component, "trigger_types"):
-                metadata_dict["trigger_types"] = component.trigger_types
-            if hasattr(component, "context_behavior"):
-                metadata_dict["context_behavior"] = component.context_behavior
-            if hasattr(component, "side_effects"):
-                metadata_dict["side_effects"] = component.side_effects
-            if hasattr(component, "risk_level"):
-                metadata_dict["risk_level"] = component.risk_level
-            if hasattr(component, "depends_on_skills"):
-                metadata_dict["depends_on_skills"] = component.depends_on_skills
-            if hasattr(component, "used_by_skills"):
-                metadata_dict["used_by_skills"] = component.used_by_skills
-            if hasattr(component, "llm_summary"):
-                metadata_dict["llm_summary"] = component.llm_summary
-            if hasattr(component, "llm_tags"):
-                metadata_dict["llm_tags"] = component.llm_tags
-            if hasattr(component, "provides_commands"):
-                metadata_dict["provides_commands"] = component.provides_commands
-            if hasattr(component, "provides_mcps"):
-                metadata_dict["provides_mcps"] = component.provides_mcps
-            if hasattr(component, "trigger"):
-                metadata_dict["trigger"] = component.trigger
-            if hasattr(component, "trigger_event"):
-                metadata_dict["trigger_event"] = component.trigger_event
-            if hasattr(component, "language"):
-                metadata_dict["language"] = component.language
-            if hasattr(component, "file_size"):
-                metadata_dict["file_size"] = component.file_size
-            if hasattr(component, "is_executable"):
-                metadata_dict["is_executable"] = component.is_executable
-            if hasattr(component, "command"):
-                metadata_dict["command"] = component.command
-            if hasattr(component, "args"):
-                metadata_dict["args"] = component.args
-            if hasattr(component, "env_vars"):
-                metadata_dict["env_vars"] = component.env_vars
-            if hasattr(component, "transport"):
-                metadata_dict["transport"] = component.transport
-            if hasattr(component, "source"):
-                metadata_dict["source"] = component.source
-            if hasattr(component, "source_detail"):
-                metadata_dict["source_detail"] = component.source_detail
-            if hasattr(component, "git_remote"):
-                metadata_dict["git_remote"] = component.git_remote
-            if hasattr(component, "config_extra"):
-                metadata_dict["config_extra"] = component.config_extra
-            if hasattr(component, "shebang"):
-                metadata_dict["shebang"] = component.shebang
-            if hasattr(component, "commands_detail"):
-                metadata_dict["commands_detail"] = component.commands_detail
-            if hasattr(component, "mcps_detail"):
-                metadata_dict["mcps_detail"] = component.mcps_detail
-
-            metadata_json = json.dumps(metadata_dict)
+            metadata_dict = self._build_metadata_dict(component)
+            metadata_json = json.dumps(metadata_dict, default=str)
 
             # Check if component exists
             cursor.execute(
@@ -483,6 +357,53 @@ class ToolingDatabase:
             )
 
         self.conn.commit()
+
+    def _build_metadata_dict(self, component: Any) -> Dict[str, Any]:
+        """Serialize a component dataclass into a JSON-safe metadata dictionary.
+
+        The `components` table already stores some core attributes as dedicated
+        columns (platform/name/type/origin/status/version/install_path), but we
+        keep them in the metadata JSON as well for export/debugging consistency.
+        """
+        base: Dict[str, Any] = {
+            "name": getattr(component, "name", ""),
+            "type": getattr(component, "type", ""),
+            "platform": getattr(component, "platform", "claude"),
+            "origin": getattr(component, "origin", ""),
+            "status": getattr(component, "status", ""),
+            "last_modified": (
+                component.last_modified.isoformat()
+                if getattr(component, "last_modified", None)
+                else None
+            ),
+            "install_path": str(getattr(component, "install_path", "")),
+        }
+
+        # Populate remaining dataclass fields dynamically (best-effort).
+        if not is_dataclass(component):
+            return base
+
+        for f in dataclass_fields(component):
+            key = f.name
+            if key in base:
+                continue
+            try:
+                value = getattr(component, key)
+            except Exception:
+                continue
+
+            if value is None:
+                continue
+
+            # Normalize common non-JSON primitives.
+            if isinstance(value, datetime):
+                base[key] = value.isoformat()
+            elif isinstance(value, Path):
+                base[key] = str(value)
+            else:
+                base[key] = value
+
+        return base
 
     def track_invocation(
         self,
