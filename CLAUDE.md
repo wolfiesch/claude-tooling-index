@@ -166,6 +166,13 @@ tests/
 - **Monkeypatch**: Used to mock `Path.home()` for directory detection tests
 - **Graceful handling**: Scanners return empty results for missing directories rather than raising errors
 
+### CI/CD
+
+GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push to master/main and pull requests:
+
+- **Test job**: Runs pytest on Python 3.9, 3.10, 3.11, 3.12 (matrix strategy)
+- **Lint job**: Runs ruff linter on Python 3.12
+
 ## Database Location
 
 Default: `~/.claude/data/tooling_index.db`
