@@ -187,7 +187,8 @@ class ToolingScanner:
 
         # T2: Transcript and growth analytics
         try:
-            transcript_metrics = self.transcript_scanner.scan(sample_limit=500)
+            # Scan all transcript files for accurate token analytics.
+            transcript_metrics = self.transcript_scanner.scan(sample_limit=0)
         except Exception as e:
             core_result.errors.append(f"Error scanning transcripts: {e}")
 
