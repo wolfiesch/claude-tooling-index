@@ -51,6 +51,11 @@ class TestCodexMCPScanner:
         assert test_server.platform == "codex"
         assert test_server.status == "active"
         assert test_server.transport == "stdio"
+        assert test_server.source == "config.toml"
+        assert (
+            test_server.source_detail
+            == f"{sample_config_toml}:[mcp_servers.test-server]"
+        )
 
         # Env vars should be redacted
         assert test_server.env_vars["API_KEY"] == "${API_KEY}"  # Placeholder preserved
@@ -61,6 +66,10 @@ class TestCodexMCPScanner:
         assert another_server.command == "npx"
         assert another_server.args == ["@modelcontextprotocol/server-test"]
         assert another_server.env_vars == {}
+        assert (
+            another_server.source_detail
+            == f"{sample_config_toml}:[mcp_servers.another-server]"
+        )
 
     def test_scan_returns_empty_for_missing_file(self, tmp_path: Path):
         scanner = CodexMCPScanner(config_toml_path=tmp_path / "nonexistent.toml")
@@ -114,6 +123,21 @@ args = "single-arg"
         assert len(mcps) == 1
         assert mcps[0].args == ["single-arg"]
 
+    def test_scan_includes_disabled_mcp_servers(self, tmp_path: Path):
+        config_path = tmp_path / "config.toml"
+        config_path.write_text("""
+[mcp_servers.enabled]
+command = "echo"
+
+[mcp_servers_disabled.disabled]
+command = "echo"
+""")
+
+        mcps = CodexMCPScanner(config_toml_path=config_path).scan()
+        by_name = {m.name: m for m in mcps}
+        assert by_name["enabled"].status == "active"
+        assert by_name["disabled"].status == "disabled"
+
     def test_scan_without_redaction(self, tmp_path: Path):
         config_path = tmp_path / "config.toml"
         config_path.write_text("""
@@ -140,3 +164,26 @@ env = { SECRET = "my-secret" }
             assert mcp.origin == "custom-origin"
             assert mcp.install_path == sample_config_toml
             assert mcp.last_modified is not None
+
+    def test_scan_populates_and_redacts_config_extra(self, tmp_path: Path) -> None:
+        config_path = tmp_path / "config.toml"
+        config_path.write_text(
+            """
+[mcp_servers.demo]
+command = "python3"
+args = ["-m", "x"]
+cwd = "/tmp"
+token = "secret-token"
+id = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+flags = ["--a", "--b"]
+meta = { retries = 2 }
+"""
+        )
+        mcps = CodexMCPScanner(config_toml_path=config_path).scan()
+        assert len(mcps) == 1
+        demo = mcps[0]
+        assert demo.config_extra["cwd"] == "/tmp"
+        assert demo.config_extra["token"] == "<redacted>"
+        assert demo.config_extra["id"] == "<redacted>"
+        assert demo.config_extra["flags"] == ["--a", "--b"]
+        assert demo.config_extra["meta"]["retries"] == 2
