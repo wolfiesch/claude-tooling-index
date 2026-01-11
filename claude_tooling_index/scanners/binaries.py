@@ -21,29 +21,37 @@ class BinaryScanner:
         if not self.bin_dir.exists():
             return binaries
 
-        for binary_file in self.bin_dir.iterdir():
-            if not binary_file.is_file():
+        for location in [self.bin_dir, self.bin_dir / ".disabled"]:
+            if not location.exists():
                 continue
 
-            # Skip hidden files
-            if binary_file.name.startswith("."):
-                continue
+            is_disabled = location.name == ".disabled"
 
-            try:
-                binary = self._scan_binary(binary_file)
-                if binary:
-                    binaries.append(binary)
-            except Exception as e:
-                # Track error but continue
-                error_binary = BinaryMetadata(
-                    name=binary_file.name,
-                    origin="unknown",
-                    status="error",
-                    last_modified=datetime.now(),
-                    install_path=binary_file,
-                    error_message=str(e),
-                )
-                binaries.append(error_binary)
+            for binary_file in location.iterdir():
+                if not binary_file.is_file():
+                    continue
+
+                # Skip hidden files
+                if binary_file.name.startswith("."):
+                    continue
+
+                try:
+                    binary = self._scan_binary(binary_file)
+                    if binary:
+                        if is_disabled:
+                            binary.status = "disabled"
+                        binaries.append(binary)
+                except Exception as e:
+                    # Track error but continue
+                    error_binary = BinaryMetadata(
+                        name=binary_file.name,
+                        origin="unknown",
+                        status="error",
+                        last_modified=datetime.now(),
+                        install_path=binary_file,
+                        error_message=str(e),
+                    )
+                    binaries.append(error_binary)
 
         return binaries
 

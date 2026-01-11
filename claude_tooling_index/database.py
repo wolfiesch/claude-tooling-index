@@ -272,6 +272,110 @@ class ToolingDatabase:
                 metadata_dict["performance_notes"] = component.performance_notes
             if hasattr(component, "marketplace"):
                 metadata_dict["marketplace"] = component.marketplace
+            if hasattr(component, "author"):
+                metadata_dict["author"] = component.author
+            if hasattr(component, "homepage"):
+                metadata_dict["homepage"] = component.homepage
+            if hasattr(component, "repository"):
+                metadata_dict["repository"] = component.repository
+            if hasattr(component, "license"):
+                metadata_dict["license"] = component.license
+            if hasattr(component, "dependencies"):
+                metadata_dict["dependencies"] = component.dependencies
+            if hasattr(component, "dependency_sources"):
+                metadata_dict["dependency_sources"] = component.dependency_sources
+            if hasattr(component, "frontmatter_extra"):
+                metadata_dict["frontmatter_extra"] = component.frontmatter_extra
+            if hasattr(component, "invocation_aliases"):
+                metadata_dict["invocation_aliases"] = component.invocation_aliases
+            if hasattr(component, "invocation_arguments"):
+                metadata_dict["invocation_arguments"] = component.invocation_arguments
+            if hasattr(component, "invocation_instruction"):
+                metadata_dict["invocation_instruction"] = component.invocation_instruction
+            if hasattr(component, "references"):
+                metadata_dict["references"] = component.references
+            if hasattr(component, "context_fork_hint"):
+                metadata_dict["context_fork_hint"] = component.context_fork_hint
+            if hasattr(component, "when_to_use"):
+                metadata_dict["when_to_use"] = component.when_to_use
+            if hasattr(component, "trigger_rules"):
+                metadata_dict["trigger_rules"] = component.trigger_rules
+            if hasattr(component, "detected_tools"):
+                metadata_dict["detected_tools"] = component.detected_tools
+            if hasattr(component, "detected_toolkits"):
+                metadata_dict["detected_toolkits"] = component.detected_toolkits
+            if hasattr(component, "inputs"):
+                metadata_dict["inputs"] = component.inputs
+            if hasattr(component, "outputs"):
+                metadata_dict["outputs"] = component.outputs
+            if hasattr(component, "safety_notes"):
+                metadata_dict["safety_notes"] = component.safety_notes
+            if hasattr(component, "capability_tags"):
+                metadata_dict["capability_tags"] = component.capability_tags
+            if hasattr(component, "inputs_schema"):
+                metadata_dict["inputs_schema"] = component.inputs_schema
+            if hasattr(component, "outputs_schema"):
+                metadata_dict["outputs_schema"] = component.outputs_schema
+            if hasattr(component, "examples"):
+                metadata_dict["examples"] = component.examples
+            if hasattr(component, "prerequisites"):
+                metadata_dict["prerequisites"] = component.prerequisites
+            if hasattr(component, "gotchas"):
+                metadata_dict["gotchas"] = component.gotchas
+            if hasattr(component, "required_env_vars"):
+                metadata_dict["required_env_vars"] = component.required_env_vars
+            if hasattr(component, "trigger_types"):
+                metadata_dict["trigger_types"] = component.trigger_types
+            if hasattr(component, "context_behavior"):
+                metadata_dict["context_behavior"] = component.context_behavior
+            if hasattr(component, "side_effects"):
+                metadata_dict["side_effects"] = component.side_effects
+            if hasattr(component, "risk_level"):
+                metadata_dict["risk_level"] = component.risk_level
+            if hasattr(component, "depends_on_skills"):
+                metadata_dict["depends_on_skills"] = component.depends_on_skills
+            if hasattr(component, "used_by_skills"):
+                metadata_dict["used_by_skills"] = component.used_by_skills
+            if hasattr(component, "llm_summary"):
+                metadata_dict["llm_summary"] = component.llm_summary
+            if hasattr(component, "llm_tags"):
+                metadata_dict["llm_tags"] = component.llm_tags
+            if hasattr(component, "provides_commands"):
+                metadata_dict["provides_commands"] = component.provides_commands
+            if hasattr(component, "provides_mcps"):
+                metadata_dict["provides_mcps"] = component.provides_mcps
+            if hasattr(component, "trigger"):
+                metadata_dict["trigger"] = component.trigger
+            if hasattr(component, "trigger_event"):
+                metadata_dict["trigger_event"] = component.trigger_event
+            if hasattr(component, "language"):
+                metadata_dict["language"] = component.language
+            if hasattr(component, "file_size"):
+                metadata_dict["file_size"] = component.file_size
+            if hasattr(component, "is_executable"):
+                metadata_dict["is_executable"] = component.is_executable
+            if hasattr(component, "command"):
+                metadata_dict["command"] = component.command
+            if hasattr(component, "args"):
+                metadata_dict["args"] = component.args
+            if hasattr(component, "env_vars"):
+                metadata_dict["env_vars"] = component.env_vars
+            if hasattr(component, "transport"):
+                metadata_dict["transport"] = component.transport
+            if hasattr(component, "source"):
+                metadata_dict["source"] = component.source
+            if hasattr(component, "source_detail"):
+                metadata_dict["source_detail"] = component.source_detail
+            if hasattr(component, "git_remote"):
+                metadata_dict["git_remote"] = component.git_remote
+            if hasattr(component, "config_extra"):
+                metadata_dict["config_extra"] = component.config_extra
+            if hasattr(component, "shebang"):
+                metadata_dict["shebang"] = component.shebang
+            if hasattr(component, "commands_detail"):
+                metadata_dict["commands_detail"] = component.commands_detail
+            if hasattr(component, "mcps_detail"):
+                metadata_dict["mcps_detail"] = component.mcps_detail
 
             metadata_json = json.dumps(metadata_dict)
 
@@ -509,6 +613,108 @@ class ToolingDatabase:
             "most_used": most_used,
             "recent_installs": recent_installs,
             "performance_avg": performance_avg,
+        }
+
+    def get_component_usage(
+        self,
+        *,
+        platform: str,
+        name: str,
+        component_type: str,
+        days: int = 30,
+        recent_errors_limit: int = 3,
+    ) -> Dict[str, Any]:
+        """Get usage metrics for a specific component (best-effort).
+
+        Returns a stable dictionary even when the component has no usage data.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT id FROM components WHERE platform = ? AND name = ? AND type = ?",
+            (platform, name, component_type),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return {
+                "found": False,
+                "platform": platform,
+                "name": name,
+                "type": component_type,
+                "days": days,
+                "total_invocations": 0,
+            }
+
+        component_id = row["id"]
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) as total,
+                COUNT(DISTINCT session_id) as sessions,
+                SUM(CASE WHEN success THEN 1 ELSE 0 END) as successes,
+                SUM(CASE WHEN success THEN 0 ELSE 1 END) as failures,
+                AVG(duration_ms) as avg_duration_ms,
+                MAX(timestamp) as last_invoked
+            FROM invocations
+            WHERE component_id = ?
+            AND timestamp >= datetime('now', '-' || ? || ' days')
+            """,
+            (component_id, days),
+        )
+        stats = cursor.fetchone() or {}
+
+        # P95 duration: compute in Python from sorted durations.
+        cursor.execute(
+            """
+            SELECT duration_ms
+            FROM invocations
+            WHERE component_id = ?
+            AND duration_ms IS NOT NULL
+            AND timestamp >= datetime('now', '-' || ? || ' days')
+            ORDER BY duration_ms
+            """,
+            (component_id, days),
+        )
+        durations = [r["duration_ms"] for r in cursor.fetchall() if r["duration_ms"]]
+        p95 = None
+        if durations:
+            idx = int(round(0.95 * (len(durations) - 1)))
+            idx = max(0, min(idx, len(durations) - 1))
+            p95 = durations[idx]
+
+        cursor.execute(
+            """
+            SELECT timestamp, error_message
+            FROM invocations
+            WHERE component_id = ?
+            AND success = 0
+            AND error_message IS NOT NULL
+            ORDER BY timestamp DESC
+            LIMIT ?
+            """,
+            (component_id, recent_errors_limit),
+        )
+        recent_errors = [
+            {"timestamp": r["timestamp"], "error_message": r["error_message"]}
+            for r in cursor.fetchall()
+        ]
+
+        total = int(stats["total"] or 0)
+        successes = int(stats["successes"] or 0)
+        success_rate = (successes / total) if total else None
+
+        return {
+            "found": True,
+            "platform": platform,
+            "name": name,
+            "type": component_type,
+            "days": days,
+            "total_invocations": total,
+            "sessions": int(stats["sessions"] or 0),
+            "success_rate": success_rate,
+            "avg_duration_ms": stats["avg_duration_ms"],
+            "p95_duration_ms": p95,
+            "last_invoked": stats["last_invoked"],
+            "recent_errors": recent_errors,
         }
 
     def search_components(self, query: str) -> List[Dict[str, Any]]:

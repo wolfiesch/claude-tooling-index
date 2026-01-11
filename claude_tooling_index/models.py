@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -35,6 +35,35 @@ class SkillMetadata(ComponentMetadata):
     has_docs: bool = False
     performance_notes: Optional[str] = None  # JSON string of parsed metrics
     dependencies: List[str] = field(default_factory=list)
+    dependency_sources: List[str] = field(default_factory=list)
+    frontmatter_extra: Dict[str, Any] = field(default_factory=dict)
+    invocation_aliases: List[str] = field(default_factory=list)
+    invocation_arguments: str = ""
+    invocation_instruction: str = ""
+    references: Dict[str, List[str]] = field(default_factory=dict)
+    context_fork_hint: str = ""
+    when_to_use: str = ""
+    trigger_rules: List[str] = field(default_factory=list)
+    detected_tools: Dict[str, List[str]] = field(default_factory=dict)
+    detected_toolkits: List[str] = field(default_factory=list)
+    inputs: List[str] = field(default_factory=list)
+    outputs: List[str] = field(default_factory=list)
+    safety_notes: str = ""
+    capability_tags: List[str] = field(default_factory=list)
+    inputs_schema: List[Dict[str, Any]] = field(default_factory=list)
+    outputs_schema: List[Dict[str, Any]] = field(default_factory=list)
+    examples: List[str] = field(default_factory=list)
+    prerequisites: List[str] = field(default_factory=list)
+    gotchas: List[str] = field(default_factory=list)
+    required_env_vars: List[str] = field(default_factory=list)
+    trigger_types: List[str] = field(default_factory=list)
+    context_behavior: str = ""  # "fork" | "no_fork" | "unknown"
+    side_effects: List[str] = field(default_factory=list)
+    risk_level: str = ""  # "low" | "medium" | "high"
+    depends_on_skills: List[str] = field(default_factory=list)
+    used_by_skills: List[str] = field(default_factory=list)
+    llm_summary: str = ""  # optional/opt-in
+    llm_tags: List[str] = field(default_factory=list)  # optional/opt-in
 
     def __post_init__(self):
         self.type = "skill"
@@ -46,10 +75,17 @@ class PluginMetadata(ComponentMetadata):
 
     marketplace: str = ""
     version: str = ""
+    description: str = ""
+    author: str = ""
+    homepage: str = ""
+    repository: str = ""
+    license: str = ""
     installed_at: Optional[datetime] = None
     git_commit_sha: str = ""
     provides_commands: List[str] = field(default_factory=list)
     provides_mcps: List[str] = field(default_factory=list)
+    commands_detail: Dict[str, Any] = field(default_factory=dict)
+    mcps_detail: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         self.type = "plugin"
@@ -61,6 +97,23 @@ class CommandMetadata(ComponentMetadata):
 
     description: str = ""
     from_plugin: Optional[str] = None  # Plugin name if provided by plugin
+    frontmatter_extra: Dict[str, Any] = field(default_factory=dict)
+    invocation_aliases: List[str] = field(default_factory=list)
+    invocation_arguments: str = ""
+    invocation_instruction: str = ""
+    references: Dict[str, List[str]] = field(default_factory=dict)
+    detected_tools: Dict[str, List[str]] = field(default_factory=dict)
+    detected_toolkits: List[str] = field(default_factory=list)
+    inputs: List[str] = field(default_factory=list)
+    outputs: List[str] = field(default_factory=list)
+    safety_notes: str = ""
+    capability_tags: List[str] = field(default_factory=list)
+    required_env_vars: List[str] = field(default_factory=list)
+    prerequisites: List[str] = field(default_factory=list)
+    gotchas: List[str] = field(default_factory=list)
+    examples: List[str] = field(default_factory=list)
+    side_effects: List[str] = field(default_factory=list)
+    risk_level: str = ""  # "low" | "medium" | "high"
 
     def __post_init__(self):
         self.type = "command"
@@ -71,8 +124,16 @@ class HookMetadata(ComponentMetadata):
     """Metadata for a hook."""
 
     trigger: str = ""  # e.g., "post_tool_use", "session_start"
+    trigger_event: str = ""  # normalized trigger type if detectable
     language: str = ""  # "python", "cpp", "bash", etc.
     file_size: int = 0
+    shebang: str = ""
+    is_executable: bool = False
+    detected_tools: Dict[str, List[str]] = field(default_factory=dict)
+    detected_toolkits: List[str] = field(default_factory=list)
+    required_env_vars: List[str] = field(default_factory=list)
+    side_effects: List[str] = field(default_factory=list)
+    risk_level: str = ""  # "low" | "medium" | "high"
 
     def __post_init__(self):
         self.type = "hook"
@@ -86,7 +147,10 @@ class MCPMetadata(ComponentMetadata):
     args: List[str] = field(default_factory=list)
     env_vars: Dict[str, str] = field(default_factory=dict)
     transport: str = "stdio"  # "stdio" | "sse"
+    source: str = ""  # e.g. "user" | "local" | "legacy" | "plugin" | "builtin" | "config.toml"
+    source_detail: str = ""  # Safe pointer to config origin (file path + section/key)
     git_remote: Optional[str] = None
+    config_extra: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         self.type = "mcp"

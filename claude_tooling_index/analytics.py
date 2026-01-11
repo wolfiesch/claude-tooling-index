@@ -73,6 +73,24 @@ class AnalyticsTracker:
         """
         return self.db.get_usage_stats(days)
 
+    def get_component_usage(
+        self,
+        *,
+        platform: str,
+        name: str,
+        component_type: str,
+        days: int = 30,
+        recent_errors_limit: int = 3,
+    ) -> Dict[str, Any]:
+        """Get per-component usage metrics (best-effort)."""
+        return self.db.get_component_usage(
+            platform=platform,
+            name=name,
+            component_type=component_type,
+            days=days,
+            recent_errors_limit=recent_errors_limit,
+        )
+
     def search_components(self, query: str):
         """Run a full-text search over components.
 

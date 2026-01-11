@@ -52,9 +52,7 @@ class ComponentList(DataTable):
 
         # Sort by name
         self.all_components.sort(key=lambda x: x[1].name.lower())
-        self.filtered_components = self.all_components.copy()
-
-        self._refresh_table()
+        self._apply_filters()
 
     def filter_by_text(self, text: str) -> None:
         """Filter components by text search."""
@@ -151,3 +149,16 @@ class ComponentList(DataTable):
         ):
             return self.filtered_components[self.cursor_row][1]
         return None
+
+    def select_component_identity(
+        self, *, name: str, platform: str, comp_type: str
+    ) -> None:
+        """Select a component by a stable identity tuple."""
+        for idx, (row_type, component) in enumerate(self.filtered_components):
+            if (
+                row_type == comp_type
+                and component.name == name
+                and getattr(component, "platform", "claude") == platform
+            ):
+                self.cursor_coordinate = (idx, 0)
+                break

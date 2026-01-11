@@ -79,7 +79,8 @@ cd hooks && ./build_hook.sh
 - `ToolingIndexTUI`: Main app with split pane layout
 - Widgets: `ComponentList`, `DetailView`, `SearchBar`
 - Filters: Platform (claude/codex) and Type (skill/plugin/command/hook/mcp/binary)
-- Keybindings: `/` search, `1-7` type filters, `r` refresh, `q` quit
+- Keybindings: `/` search, `1-7` type filters, `r` refresh, `e` enable/disable, `q` quit
+- UI: clickable Refresh button next to search
 
 ### Data Flow
 
