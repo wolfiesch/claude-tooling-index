@@ -248,6 +248,49 @@ def _show_extended_stats():
         click.echo(f"  Pending: {tm.pending}")
         click.echo(f"  In Progress: {tm.in_progress}")
 
+    # Transcript Metrics (T2)
+    if extended.transcript_metrics:
+        trm = extended.transcript_metrics
+        click.echo(f"\n🪙 Token Analytics:")
+        click.echo(f"  Transcripts scanned: {trm.total_transcripts}")
+        click.echo(f"  Total input tokens: {trm.total_input_tokens:,}")
+        click.echo(f"  Total output tokens: {trm.total_output_tokens:,}")
+        click.echo(f"  Cache read tokens: {trm.total_cache_read_tokens:,}")
+        click.echo(f"  Cache creation tokens: {trm.total_cache_creation_tokens:,}")
+
+        if trm.total_input_tokens > 0:
+            cache_efficiency = trm.total_cache_read_tokens / trm.total_input_tokens * 100
+            click.echo(f"  Cache efficiency: {cache_efficiency:.1f}%")
+
+        if trm.top_tools:
+            click.echo(f"\n  🔧 Top Tools (by usage):")
+            for tool, count in trm.top_tools[:10]:
+                click.echo(f"    {tool}: {count}")
+
+        if trm.model_usage:
+            click.echo(f"\n  🤖 Model Usage:")
+            for model, count in sorted(trm.model_usage.items(), key=lambda x: -x[1])[:5]:
+                click.echo(f"    {model}: {count}")
+
+    # Growth Metrics (T2)
+    if extended.growth_metrics:
+        gm = extended.growth_metrics
+        click.echo(f"\n🌱 Agentic Growth:")
+        click.echo(f"  Current Level: {gm.current_level}")
+        click.echo(f"  Total Edges: {gm.total_edges}")
+        click.echo(f"  Total Patterns: {gm.total_patterns}")
+        click.echo(f"  Projects with Edges: {gm.projects_with_edges}")
+
+        if gm.edges_by_category:
+            click.echo(f"\n  📁 Edges by Category:")
+            for cat, count in sorted(gm.edges_by_category.items(), key=lambda x: -x[1]):
+                click.echo(f"    {cat}: {count}")
+
+        if gm.patterns_by_category:
+            click.echo(f"\n  🔄 Patterns by Category:")
+            for cat, count in sorted(gm.patterns_by_category.items(), key=lambda x: -x[1]):
+                click.echo(f"    {cat}: {count}")
+
 
 @cli.command()
 @click.option("--type", help="Filter by component type")

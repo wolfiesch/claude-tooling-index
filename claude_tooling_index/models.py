@@ -264,18 +264,48 @@ class TaskMetrics:
 
 
 @dataclass
+class TranscriptMetrics:
+    """Token economics and tool usage from transcript files"""
+
+    total_transcripts: int = 0
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_cache_read_tokens: int = 0
+    total_cache_creation_tokens: int = 0
+    tool_usage: Dict[str, int] = field(default_factory=dict)
+    model_usage: Dict[str, int] = field(default_factory=dict)
+    top_tools: List[tuple] = field(default_factory=list)  # [(tool, count), ...]
+
+
+@dataclass
+class GrowthMetrics:
+    """L1-L5 progression metrics from agentic-growth framework"""
+
+    current_level: str = "L1"
+    total_edges: int = 0
+    total_patterns: int = 0
+    edges_by_category: Dict[str, int] = field(default_factory=dict)
+    patterns_by_category: Dict[str, int] = field(default_factory=dict)
+    projects_with_edges: int = 0
+
+
+@dataclass
 class ExtendedScanResult:
     """Extended scan result including Phase 6 metadata"""
 
     # Core scan result
     core: ScanResult = field(default_factory=ScanResult)
 
-    # Phase 6 extended metadata
+    # Phase 6 extended metadata (T0)
     user_settings: Optional[UserSettingsMetadata] = None
     event_metrics: Optional[EventMetrics] = None
     insight_metrics: Optional[InsightMetrics] = None
+    # Phase 6 T1
     session_metrics: Optional[SessionMetrics] = None
     task_metrics: Optional[TaskMetrics] = None
+    # Phase 6 T2
+    transcript_metrics: Optional[TranscriptMetrics] = None
+    growth_metrics: Optional[GrowthMetrics] = None
 
     @property
     def total_count(self) -> int:

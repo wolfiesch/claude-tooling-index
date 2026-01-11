@@ -20,6 +20,9 @@ from .scanners import (
     # Phase 6 T1: Session and task analytics
     SessionAnalyticsScanner,
     TodoScanner,
+    # Phase 6 T2: Transcript and growth analytics
+    TranscriptScanner,
+    GrowthScanner,
 )
 
 
@@ -50,6 +53,9 @@ class ToolingScanner:
             self.claude_home / "data" / "sessions"
         )
         self.todos_scanner = TodoScanner(self.claude_home / "todos")
+        # Phase 6 T2: Transcript and growth analytics
+        self.transcript_scanner = TranscriptScanner(self.claude_home / "projects")
+        self.growth_scanner = GrowthScanner(self.claude_home / "agentic-growth")
 
     def scan_all(self, parallel: bool = True) -> ScanResult:
         """
@@ -137,6 +143,8 @@ class ToolingScanner:
         insight_metrics = None
         session_metrics = None
         task_metrics = None
+        transcript_metrics = None
+        growth_metrics = None
 
         try:
             user_settings = self.user_settings_scanner.scan()
@@ -164,6 +172,17 @@ class ToolingScanner:
         except Exception as e:
             core_result.errors.append(f"Error scanning todos: {e}")
 
+        # T2: Transcript and growth analytics
+        try:
+            transcript_metrics = self.transcript_scanner.scan(sample_limit=500)
+        except Exception as e:
+            core_result.errors.append(f"Error scanning transcripts: {e}")
+
+        try:
+            growth_metrics = self.growth_scanner.scan()
+        except Exception as e:
+            core_result.errors.append(f"Error scanning growth: {e}")
+
         return ExtendedScanResult(
             core=core_result,
             user_settings=user_settings,
@@ -171,6 +190,8 @@ class ToolingScanner:
             insight_metrics=insight_metrics,
             session_metrics=session_metrics,
             task_metrics=task_metrics,
+            transcript_metrics=transcript_metrics,
+            growth_metrics=growth_metrics,
         )
 
     def _detect_claude_home(self) -> Path:

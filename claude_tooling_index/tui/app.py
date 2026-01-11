@@ -147,6 +147,30 @@ class StatsPanel(Static):
             )
             lines.append(line6)
 
+        # Line 7: Token economics (T2)
+        if hasattr(extended_result, 'transcript_metrics') and extended_result.transcript_metrics:
+            trm = extended_result.transcript_metrics
+            total_tokens = trm.total_input_tokens + trm.total_output_tokens
+            cache_efficiency = (trm.total_cache_read_tokens / trm.total_input_tokens * 100) if trm.total_input_tokens > 0 else 0
+            top_tool = trm.top_tools[0][0] if trm.top_tools else "N/A"
+            line7 = (
+                f"[#90CAF9]🪙[/#90CAF9] Tokens: [#90CAF9]{total_tokens:,}[/#90CAF9] total  "
+                f"│  [#90CAF9]{cache_efficiency:.0f}%[/#90CAF9] cache hit  "
+                f"│  Top tool: [#90CAF9]{top_tool}[/#90CAF9]"
+            )
+            lines.append(line7)
+
+        # Line 8: Growth progression (T2)
+        if hasattr(extended_result, 'growth_metrics') and extended_result.growth_metrics:
+            gm = extended_result.growth_metrics
+            line8 = (
+                f"[#A5D6A7]🌱[/#A5D6A7] Growth: [#A5D6A7]{gm.current_level}[/#A5D6A7]  "
+                f"│  [#A5D6A7]{gm.total_edges}[/#A5D6A7] edges  "
+                f"│  [#A5D6A7]{gm.total_patterns}[/#A5D6A7] patterns  "
+                f"│  [#A5D6A7]{gm.projects_with_edges}[/#A5D6A7] projects"
+            )
+            lines.append(line8)
+
         self.update("\n".join(lines))
 
 

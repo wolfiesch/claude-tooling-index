@@ -14,6 +14,9 @@ from .insights import InsightsScanner
 # Phase 6 T1: Session and task analytics
 from .sessions import SessionAnalyticsScanner
 from .todos import TodoScanner
+# Phase 6 T2: Transcript and growth analytics
+from .transcripts import TranscriptScanner
+from .growth import GrowthScanner
 
 __all__ = [
     # Core component scanners
@@ -30,4 +33,7 @@ __all__ = [
     # Phase 6 extended scanners (T1)
     "SessionAnalyticsScanner",
     "TodoScanner",
+    # Phase 6 extended scanners (T2)
+    "TranscriptScanner",
+    "GrowthScanner",
 ]
