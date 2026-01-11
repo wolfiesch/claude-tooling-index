@@ -249,6 +249,9 @@ tui:
   vim_mode: true
 ```
 
+Environment variables:
+- `TOOLING_INDEX_TRANSCRIPT_SAMPLE_LIMIT`: Max transcript files to scan for token analytics. Set to `0` to scan all files (default). Use a smaller number (e.g. `500`) to trade accuracy for speed.
+
 ## C++ Hook Installation
 
 The C++ hook provides <1ms overhead for tracking (vs ~50ms for Python).

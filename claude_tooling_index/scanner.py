@@ -4,6 +4,7 @@ This module coordinates all component scanners for a single Claude home
 directory (typically `~/.claude`).
 """
 
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -187,7 +188,18 @@ class ToolingScanner:
 
         # T2: Transcript and growth analytics
         try:
-            transcript_metrics = self.transcript_scanner.scan(sample_limit=500)
+            # Default: scan all transcript files for accurate token analytics.
+            # If you have a very large number of transcripts and want faster (sampled)
+            # scans, set `TOOLING_INDEX_TRANSCRIPT_SAMPLE_LIMIT` (e.g. 500).
+            raw_sample_limit = os.environ.get("TOOLING_INDEX_TRANSCRIPT_SAMPLE_LIMIT")
+            sample_limit = 0
+            if raw_sample_limit:
+                try:
+                    sample_limit = max(0, int(raw_sample_limit))
+                except ValueError:
+                    sample_limit = 0
+
+            transcript_metrics = self.transcript_scanner.scan(sample_limit=sample_limit)
         except Exception as e:
             core_result.errors.append(f"Error scanning transcripts: {e}")
 
