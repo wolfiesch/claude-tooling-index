@@ -2,9 +2,9 @@
 
 import json
 import os
+from collections import Counter
 from pathlib import Path
 from typing import Optional
-from collections import Counter
 
 from ..models import TranscriptMetrics
 

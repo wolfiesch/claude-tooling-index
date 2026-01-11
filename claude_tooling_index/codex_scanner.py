@@ -5,11 +5,11 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 from .models import ScanResult
-from .scanners.skills import SkillScanner
 from .scanners.codex_mcps import CodexMCPScanner
+from .scanners.skills import SkillScanner
 
 
 class CodexToolingScanner:
@@ -24,7 +24,7 @@ class CodexToolingScanner:
         self.mcps_scanner = CodexMCPScanner(self.codex_home / "config.toml")
 
     def scan_all(self, parallel: bool = True) -> ScanResult:
-        scan_start = datetime.now()
+        datetime.now()
         errors: List[str] = []
 
         if parallel:

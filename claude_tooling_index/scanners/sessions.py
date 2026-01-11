@@ -2,10 +2,10 @@
 
 import json
 import os
-from pathlib import Path
-from datetime import datetime
-from typing import Optional
 from collections import Counter
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 from ..models import SessionMetrics
 

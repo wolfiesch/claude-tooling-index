@@ -1,9 +1,10 @@
 """Command scanner - extracts metadata from command .md files"""
 
 import re
-from pathlib import Path
 from datetime import datetime
-from typing import List, Dict
+from pathlib import Path
+from typing import Dict, List
+
 import yaml
 
 from ..models import CommandMetadata

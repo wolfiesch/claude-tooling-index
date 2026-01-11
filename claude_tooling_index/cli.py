@@ -1,7 +1,9 @@
 """CLI entry point for tooling-index"""
 
-import click
 from pathlib import Path
+
+import click
+
 from claude_tooling_index.scanner import ToolingScanner
 
 
@@ -43,7 +45,7 @@ def scan(platform, claude_home, codex_home, parallel, verbose, no_db):
             tracker.update_components(result)
             tracker.close()
 
-        click.echo(f"\n✅ Scan complete!")
+        click.echo("\n✅ Scan complete!")
         click.echo(f"   Total components: {result.total_count}")
         click.echo(f"   Skills: {len(result.skills)}")
         click.echo(f"   Plugins: {len(result.plugins)}")
@@ -62,12 +64,12 @@ def scan(platform, claude_home, codex_home, parallel, verbose, no_db):
                 click.echo(f"     - {p}: {by_platform[p]}")
 
         if result.errors:
-            click.echo(f"\n⚠️  Errors encountered:")
+            click.echo("\n⚠️  Errors encountered:")
             for error in result.errors:
                 click.echo(f"   - {error}")
 
         if verbose:
-            click.echo(f"\n📋 Component Details:")
+            click.echo("\n📋 Component Details:")
             click.echo(f"\nSkills ({len(result.skills)}):")
             for skill in result.skills:
                 click.echo(f"  - {skill.name} [{skill.status}] ({skill.file_count} files, {skill.total_lines} lines)")
@@ -117,26 +119,26 @@ def stats(days, detailed):
         click.echo(f"\n📈 Total Invocations: {stats['total_invocations']}")
 
         if stats['most_used']:
-            click.echo(f"\n🔥 Most Used Components:")
+            click.echo("\n🔥 Most Used Components:")
             for i, component in enumerate(stats['most_used'], 1):
                 click.echo(f"  {i}. {component['name']} ({component['type']}) - {component['count']} times")
         else:
-            click.echo(f"\n🔥 Most Used Components: No usage data yet")
+            click.echo("\n🔥 Most Used Components: No usage data yet")
 
         if stats['recent_installs']:
-            click.echo(f"\n📦 Recent Installations:")
+            click.echo("\n📦 Recent Installations:")
             for install in stats['recent_installs']:
                 version = f"v{install['version']}" if install['version'] else "unknown version"
                 click.echo(f"  - {install['name']} ({install['type']}) - {version} at {install['installed_at']}")
         else:
-            click.echo(f"\n📦 Recent Installations: No recent installations")
+            click.echo("\n📦 Recent Installations: No recent installations")
 
         if stats['performance_avg']:
-            click.echo(f"\n⚡ Performance (avg execution time):")
+            click.echo("\n⚡ Performance (avg execution time):")
             for component, avg_ms in sorted(stats['performance_avg'].items(), key=lambda x: x[1], reverse=True):
                 click.echo(f"  - {component}: {avg_ms:.1f}ms")
         else:
-            click.echo(f"\n⚡ Performance: No performance data yet")
+            click.echo("\n⚡ Performance: No performance data yet")
 
         tracker.close()
 
@@ -151,8 +153,6 @@ def stats(days, detailed):
 
 def _show_extended_stats():
     """Display Phase 6 extended metrics"""
-    from claude_tooling_index.scanner import ToolingScanner
-
     click.echo(f"\n{'='*60}")
     click.echo("📊 Extended Metrics (Phase 6)")
     click.echo(f"{'='*60}")
@@ -163,7 +163,7 @@ def _show_extended_stats():
     # User Settings
     if extended.user_settings:
         us = extended.user_settings
-        click.echo(f"\n👤 User Activity:")
+        click.echo("\n👤 User Activity:")
         click.echo(f"  Total sessions: {us.total_startups}")
         click.echo(f"  Account age: {us.account_age_days} days")
         click.echo(f"  Sessions/day: {us.sessions_per_day:.2f}")
@@ -173,84 +173,84 @@ def _show_extended_stats():
         click.echo(f"  Prompt queue uses: {us.prompt_queue_use_count}")
 
         if us.top_skills:
-            click.echo(f"\n  🔥 Top Skills by Usage:")
+            click.echo("\n  🔥 Top Skills by Usage:")
             for skill in us.top_skills[:10]:
                 last_used = skill.last_used_at.strftime("%Y-%m-%d") if skill.last_used_at else "unknown"
                 click.echo(f"    {skill.name}: {skill.usage_count} uses (last: {last_used})")
 
         if us.high_adoption_features:
-            click.echo(f"\n  ✅ High Adoption Features (>90%):")
+            click.echo("\n  ✅ High Adoption Features (>90%):")
             for feature in us.high_adoption_features[:10]:
                 click.echo(f"    - {feature}")
 
     # Event Metrics
     if extended.event_metrics:
         em = extended.event_metrics
-        click.echo(f"\n🔧 Event Queue Analytics:")
+        click.echo("\n🔧 Event Queue Analytics:")
         click.echo(f"  Total events: {em.total_events}")
         click.echo(f"  Unique sessions: {em.session_count}")
 
         if em.date_range_start and em.date_range_end:
             click.echo(f"  Date range: {em.date_range_start.strftime('%Y-%m-%d')} to {em.date_range_end.strftime('%Y-%m-%d')}")
 
-        click.echo(f"\n  📊 Event Types:")
+        click.echo("\n  📊 Event Types:")
         for event_type, count in sorted(em.event_types.items(), key=lambda x: x[1], reverse=True):
             click.echo(f"    {event_type}: {count}")
 
         if em.top_tools:
-            click.echo(f"\n  🔥 Top Tools by Invocation:")
+            click.echo("\n  🔥 Top Tools by Invocation:")
             for tool_name, count in em.top_tools[:15]:
                 click.echo(f"    {tool_name}: {count}")
 
         if em.permission_distribution:
-            click.echo(f"\n  🔐 Permission Modes:")
+            click.echo("\n  🔐 Permission Modes:")
             for mode, pct in sorted(em.permission_distribution.items(), key=lambda x: x[1], reverse=True):
                 click.echo(f"    {mode}: {pct*100:.1f}%")
 
     # Insight Metrics
     if extended.insight_metrics:
         im = extended.insight_metrics
-        click.echo(f"\n📈 Insights Analytics:")
+        click.echo("\n📈 Insights Analytics:")
         click.echo(f"  Total insights: {im.total_insights}")
         click.echo(f"  Processed sessions: {im.processed_sessions}")
 
-        click.echo(f"\n  📊 By Category:")
+        click.echo("\n  📊 By Category:")
         for category, count in sorted(im.by_category.items(), key=lambda x: x[1], reverse=True):
             click.echo(f"    {category}: {count}")
 
         if im.by_project:
-            click.echo(f"\n  📁 Top Projects by Insights:")
+            click.echo("\n  📁 Top Projects by Insights:")
             for project, count in sorted(im.by_project.items(), key=lambda x: x[1], reverse=True)[:10]:
                 click.echo(f"    {project}: {count}")
 
         if im.recent_warnings:
-            click.echo(f"\n  ⚠️  Recent Warnings:")
+            click.echo("\n  ⚠️  Recent Warnings:")
             for warning in im.recent_warnings[:5]:
                 click.echo(f"    - {warning[:80]}...")
 
         if im.recent_patterns:
-            click.echo(f"\n  🔄 Recent Patterns:")
+            click.echo("\n  🔄 Recent Patterns:")
             for pattern in im.recent_patterns[:5]:
                 click.echo(f"    - {pattern[:80]}...")
 
     # Session Metrics (T1)
     if extended.session_metrics:
         sm = extended.session_metrics
-        click.echo(f"\n📁 Session Analytics:")
+        click.echo("\n📁 Session Analytics:")
         click.echo(f"  Total sessions: {sm.total_sessions}")
         click.echo(f"  Avg prompts/session: {sm.prompts_per_session:.1f}")
         project_count = len(sm.project_distribution) if sm.project_distribution else 0
         click.echo(f"  Projects tracked: {project_count}")
 
         if sm.top_projects:
-            click.echo(f"\n  📊 Top Projects by Sessions:")
+            click.echo("\n  📊 Top Projects by Sessions:")
             for project, count in sm.top_projects[:10]:
                 click.echo(f"    {project}: {count}")
 
         if sm.activity_by_day:
             # Show last 7 days of activity
             from datetime import datetime, timedelta
-            click.echo(f"\n  📅 Recent Activity (last 7 days):")
+            click.echo("\n  📅 Recent Activity (last 7 days):")
             today = datetime.now().date()
             for i in range(6, -1, -1):
                 day = today - timedelta(days=i)
@@ -262,7 +262,7 @@ def _show_extended_stats():
     # Task Metrics (T1)
     if extended.task_metrics:
         tm = extended.task_metrics
-        click.echo(f"\n✅ Task Analytics:")
+        click.echo("\n✅ Task Analytics:")
         click.echo(f"  Total tasks: {tm.total_tasks}")
         click.echo(f"  Completed: {tm.completed} ({tm.completion_rate:.0%})")
         click.echo(f"  Pending: {tm.pending}")
@@ -271,7 +271,7 @@ def _show_extended_stats():
     # Transcript Metrics (T2)
     if extended.transcript_metrics:
         trm = extended.transcript_metrics
-        click.echo(f"\n🪙 Token Analytics:")
+        click.echo("\n🪙 Token Analytics:")
         click.echo(f"  Transcripts scanned: {trm.total_transcripts}")
         click.echo(f"  Total input tokens: {trm.total_input_tokens:,}")
         click.echo(f"  Total output tokens: {trm.total_output_tokens:,}")
@@ -283,31 +283,31 @@ def _show_extended_stats():
             click.echo(f"  Cache efficiency: {cache_efficiency:.1f}%")
 
         if trm.top_tools:
-            click.echo(f"\n  🔧 Top Tools (by usage):")
+            click.echo("\n  🔧 Top Tools (by usage):")
             for tool, count in trm.top_tools[:10]:
                 click.echo(f"    {tool}: {count}")
 
         if trm.model_usage:
-            click.echo(f"\n  🤖 Model Usage:")
+            click.echo("\n  🤖 Model Usage:")
             for model, count in sorted(trm.model_usage.items(), key=lambda x: -x[1])[:5]:
                 click.echo(f"    {model}: {count}")
 
     # Growth Metrics (T2)
     if extended.growth_metrics:
         gm = extended.growth_metrics
-        click.echo(f"\n🌱 Agentic Growth:")
+        click.echo("\n🌱 Agentic Growth:")
         click.echo(f"  Current Level: {gm.current_level}")
         click.echo(f"  Total Edges: {gm.total_edges}")
         click.echo(f"  Total Patterns: {gm.total_patterns}")
         click.echo(f"  Projects with Edges: {gm.projects_with_edges}")
 
         if gm.edges_by_category:
-            click.echo(f"\n  📁 Edges by Category:")
+            click.echo("\n  📁 Edges by Category:")
             for cat, count in sorted(gm.edges_by_category.items(), key=lambda x: -x[1]):
                 click.echo(f"    {cat}: {count}")
 
         if gm.patterns_by_category:
-            click.echo(f"\n  🔄 Patterns by Category:")
+            click.echo("\n  🔄 Patterns by Category:")
             for cat, count in sorted(gm.patterns_by_category.items(), key=lambda x: -x[1]):
                 click.echo(f"    {cat}: {count}")
 
@@ -325,8 +325,9 @@ def _show_extended_stats():
 def list(platform, type, origin, status, output_json):
     """List all components from database"""
     try:
-        from claude_tooling_index.analytics import AnalyticsTracker
         import json
+
+        from claude_tooling_index.analytics import AnalyticsTracker
 
         tracker = AnalyticsTracker()
         components = tracker.get_components(platform=platform, type=type, origin=origin, status=status)
@@ -437,9 +438,10 @@ def tui(platform, claude_home, codex_home):
 def export(output_format, output, include_disabled, platform, claude_home, codex_home):
     """Export tooling index to JSON or Markdown"""
     try:
-        from claude_tooling_index.multi_scanner import MultiToolingScanner
-        from claude_tooling_index.exporters import JSONExporter, MarkdownExporter
         from pathlib import Path
+
+        from claude_tooling_index.exporters import JSONExporter, MarkdownExporter
+        from claude_tooling_index.multi_scanner import MultiToolingScanner
 
         click.echo(f"📦 Exporting ({platform}) to {output_format}...")
 

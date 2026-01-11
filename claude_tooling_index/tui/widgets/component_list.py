@@ -1,8 +1,9 @@
 """Component List Widget - Filterable table of all components"""
 
-from typing import List, Optional, Any
-from textual.widgets import DataTable
+from typing import Any, List, Optional
+
 from textual.message import Message
+from textual.widgets import DataTable
 
 
 class ComponentList(DataTable):

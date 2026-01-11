@@ -1,10 +1,10 @@
 """Event Queue Scanner - extracts analytics from ~/.claude/data/event_queue.jsonl"""
 
 import json
-from pathlib import Path
-from datetime import datetime
-from typing import Optional
 from collections import Counter
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 from ..models import EventMetrics
 

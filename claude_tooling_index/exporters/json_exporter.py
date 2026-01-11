@@ -3,9 +3,9 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Union
+from typing import Any, Dict, List, Union
 
-from ..models import ScanResult, ComponentMetadata
+from ..models import ComponentMetadata, ScanResult
 
 
 class JSONExporter:

@@ -1,10 +1,11 @@
 """Unit tests for MultiToolingScanner."""
 
-import pytest
 from pathlib import Path
 
-from claude_tooling_index.multi_scanner import MultiToolingScanner
+import pytest
+
 from claude_tooling_index.models import ScanResult
+from claude_tooling_index.multi_scanner import MultiToolingScanner
 
 
 class TestMultiToolingScanner:
@@ -158,8 +159,9 @@ command = "python3"
         assert result.scan_time is not None
 
     def test_merge_results_combines_all_lists(self):
-        from claude_tooling_index.models import SkillMetadata, MCPMetadata
         from datetime import datetime
+
+        from claude_tooling_index.models import SkillMetadata
 
         scanner = MultiToolingScanner()
 

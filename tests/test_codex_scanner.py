@@ -1,7 +1,8 @@
 """Unit tests for CodexToolingScanner."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from claude_tooling_index.codex_scanner import CodexToolingScanner
 from claude_tooling_index.models import ScanResult

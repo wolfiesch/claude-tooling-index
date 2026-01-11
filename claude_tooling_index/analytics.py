@@ -1,7 +1,7 @@
 """Analytics tracker - usage tracking and statistics"""
 
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from .database import ToolingDatabase
 from .models import ScanResult
@@ -26,8 +26,7 @@ class AnalyticsTracker:
         success: bool = True,
         error_message: Optional[str] = None,
     ):
-        """
-        Record component usage.
+        """Record component usage.
 
         Args:
             component: Component identifier in format "type:name" (e.g., "skill:gmail-gateway")

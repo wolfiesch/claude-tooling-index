@@ -1,9 +1,9 @@
 """MCP scanner - extracts metadata from all MCP sources"""
 
 import json
-from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Any
+from pathlib import Path
+from typing import List
 
 from ..models import MCPMetadata
 

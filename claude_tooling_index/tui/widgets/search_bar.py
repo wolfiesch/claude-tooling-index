@@ -1,7 +1,7 @@
 """Search Bar Widget - Live search input"""
 
-from textual.widgets import Input
 from textual.message import Message
+from textual.widgets import Input
 
 
 class SearchBar(Input):

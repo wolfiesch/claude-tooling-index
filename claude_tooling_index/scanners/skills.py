@@ -1,10 +1,11 @@
 """Skill scanner - extracts metadata from SKILL.md files"""
 
-import re
 import json
-from pathlib import Path
+import re
 from datetime import datetime
-from typing import List, Optional, Dict
+from pathlib import Path
+from typing import Dict, List, Optional
+
 import yaml
 
 from ..models import SkillMetadata
@@ -14,8 +15,7 @@ class PerformanceMetricsExtractor:
     """Extract performance metrics from SKILL.md files"""
 
     def extract_metrics(self, skill_md_content: str) -> Optional[Dict]:
-        """
-        Extract performance metrics from SKILL.md.
+        """Extract performance metrics from SKILL.md.
         Priority: Markdown tables > Regex patterns
         """
         # Try table parsing first
@@ -104,7 +104,7 @@ class PerformanceMetricsExtractor:
 
     def _parse_single_table(self, table_text: str) -> Dict:
         """Parse a single markdown table"""
-        lines = [l.strip() for l in table_text.split("\n") if l.strip()]
+        lines = [line.strip() for line in table_text.split("\n") if line.strip()]
 
         # Extract headers
         header_line = lines[0]

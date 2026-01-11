@@ -1,11 +1,10 @@
-"""
-Data models for Claude Code components
+"""Data models for Claude Code components
 """
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Dict, List, Optional
 
 
 @dataclass

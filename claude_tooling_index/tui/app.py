@@ -1,14 +1,12 @@
 """Main TUI Application for Claude Tooling Index"""
 
-from pathlib import Path
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Static, Button, Label
-from textual.containers import Container, Horizontal, Vertical
 from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Button, Footer, Header, Static
 
-from .widgets import ComponentList, DetailView, SearchBar
 from ..scanner import ToolingScanner
-from ..analytics import AnalyticsTracker
+from .widgets import ComponentList, DetailView, SearchBar
 
 
 class PlatformFilter(Horizontal):

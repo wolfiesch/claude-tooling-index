@@ -1,6 +1,5 @@
 """Unit tests for CodexMCPScanner."""
 
-import pytest
 from pathlib import Path
 
 from claude_tooling_index.scanners.codex_mcps import CodexMCPScanner, _redact_env_vars

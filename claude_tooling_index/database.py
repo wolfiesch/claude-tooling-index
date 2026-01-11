@@ -1,12 +1,12 @@
 """Database schema and query layer for tooling index"""
 
-import sqlite3
-from pathlib import Path
-from datetime import datetime
-from typing import List, Dict, Optional, Any
 import json
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .models import ComponentMetadata, ScanResult
+from .models import ScanResult
 
 
 class ToolingDatabase:
@@ -108,8 +108,7 @@ class ToolingDatabase:
             self._migrate_components_add_platform(cursor)
 
     def _migrate_components_add_platform(self, cursor: sqlite3.Cursor) -> None:
-        """
-        One-time migration: add platform dimension and adjust uniqueness.
+        """One-time migration: add platform dimension and adjust uniqueness.
 
         Old: UNIQUE(name, type)
         New: UNIQUE(platform, name, type)
@@ -278,7 +277,7 @@ class ToolingDatabase:
             if existing:
                 # Update existing component
                 component_id = existing["id"]
-                first_seen = existing["first_seen"]
+                existing["first_seen"]
 
                 cursor.execute(
                     """

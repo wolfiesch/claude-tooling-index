@@ -1,8 +1,8 @@
 """Plugin scanner - extracts metadata from installed_plugins.json"""
 
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
 from ..models import PluginMetadata
@@ -59,7 +59,7 @@ class PluginScanner:
                     if plugin:
                         plugins.append(plugin)
 
-        except (json.JSONDecodeError, KeyError, OSError) as e:
+        except (json.JSONDecodeError, KeyError, OSError):
             # Log error but don't crash
             pass
 

@@ -1,7 +1,7 @@
 """Hook scanner - extracts metadata from hook files"""
 
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
 from ..models import HookMetadata

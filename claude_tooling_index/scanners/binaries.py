@@ -1,9 +1,9 @@
 """Binary scanner - extracts metadata from bin/ directory"""
 
-from pathlib import Path
-from datetime import datetime
-from typing import List
 import os
+from datetime import datetime
+from pathlib import Path
+from typing import List
 
 from ..models import BinaryMetadata
 

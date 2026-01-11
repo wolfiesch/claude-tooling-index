@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-post_tool_use_tooling.py
+"""post_tool_use_tooling.py
 
 Python fallback hook for tracking skill and command invocations.
 Use this if you cannot compile the C++ version.

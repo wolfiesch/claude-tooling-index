@@ -1,28 +1,28 @@
 """Main scanner orchestrator - coordinates all component scanners"""
 
-from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Optional
 
-from .models import ScanResult, ExtendedScanResult
+from .models import ExtendedScanResult, ScanResult
 from .scanners import (
-    SkillScanner,
-    PluginScanner,
-    CommandScanner,
-    HookScanner,
-    MCPScanner,
     BinaryScanner,
-    # Phase 6: Extended metadata scanners
-    UserSettingsScanner,
+    CommandScanner,
     EventQueueScanner,
+    GrowthScanner,
+    HookScanner,
     InsightsScanner,
+    MCPScanner,
+    PluginScanner,
     # Phase 6 T1: Session and task analytics
     SessionAnalyticsScanner,
+    SkillScanner,
     TodoScanner,
     # Phase 6 T2: Transcript and growth analytics
     TranscriptScanner,
-    GrowthScanner,
+    # Phase 6: Extended metadata scanners
+    UserSettingsScanner,
 )
 
 
@@ -58,8 +58,7 @@ class ToolingScanner:
         self.growth_scanner = GrowthScanner(self.claude_home / "agentic-growth")
 
     def scan_all(self, parallel: bool = True) -> ScanResult:
-        """
-        Scan all components in parallel or sequentially.
+        """Scan all components in parallel or sequentially.
 
         Args:
             parallel: If True, run scanners in parallel (faster).
@@ -68,7 +67,7 @@ class ToolingScanner:
         Returns:
             ScanResult with all scanned components
         """
-        scan_start = datetime.now()
+        datetime.now()
         errors = []
 
         if parallel:
@@ -125,8 +124,7 @@ class ToolingScanner:
             return []  # Return empty list on error
 
     def scan_extended(self, parallel: bool = True) -> ExtendedScanResult:
-        """
-        Scan all components plus Phase 6 extended metadata.
+        """Scan all components plus Phase 6 extended metadata.
 
         Args:
             parallel: If True, run scanners in parallel (faster).

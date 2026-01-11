@@ -5,11 +5,11 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
+from .codex_scanner import CodexToolingScanner
 from .models import ScanResult
 from .scanner import ToolingScanner
-from .codex_scanner import CodexToolingScanner
 
 
 class MultiToolingScanner:

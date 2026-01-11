@@ -1,11 +1,11 @@
 """User Settings Scanner - extracts metadata from ~/.claude.json"""
 
 import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
-from ..models import UserSettingsMetadata, SkillUsage, ProjectMetric
+from ..models import ProjectMetric, SkillUsage, UserSettingsMetadata
 
 
 class UserSettingsScanner:

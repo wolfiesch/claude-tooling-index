@@ -1,12 +1,13 @@
 """Detail View Widget - Shows component details"""
 
 import json
-from typing import Optional, Any
-from textual.widgets import Static
-from textual.containers import VerticalScroll
-from rich.text import Text
+from typing import Any, Optional
+
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
+from textual.containers import VerticalScroll
+from textual.widgets import Static
 
 
 class DetailView(VerticalScroll):
