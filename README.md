@@ -1,5 +1,7 @@
 # Claude Code Tooling Index
 
+[![CI](https://github.com/wolfiesch/claude-tooling-index/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfiesch/claude-tooling-index/actions/workflows/ci.yml)
+
 A shareable tool that catalogs and analyzes your Claude Code setup with usage analytics and an interactive TUI dashboard.
 
 ## Features
