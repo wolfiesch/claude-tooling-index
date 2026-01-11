@@ -21,6 +21,7 @@ class AnalyticsTracker:
         self,
         component: str,
         session_id: str,
+        platform: str = "claude",
         duration_ms: Optional[int] = None,
         success: bool = True,
         error_message: Optional[str] = None,
@@ -47,6 +48,7 @@ class AnalyticsTracker:
             component_name=component_name,
             component_type=component_type,
             session_id=session_id,
+            platform=platform,
             duration_ms=duration_ms,
             success=success,
             error_message=error_message,
@@ -62,12 +64,15 @@ class AnalyticsTracker:
 
     def get_components(
         self,
+        platform: Optional[str] = None,
         type: Optional[str] = None,
         origin: Optional[str] = None,
         status: Optional[str] = None,
     ):
         """Query components with filters"""
-        return self.db.get_components(type=type, origin=origin, status=status)
+        return self.db.get_components(
+            platform=platform, type=type, origin=origin, status=status
+        )
 
     def close(self):
         """Close database connection"""

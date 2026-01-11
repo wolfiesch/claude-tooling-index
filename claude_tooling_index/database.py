@@ -23,22 +23,7 @@ class ToolingDatabase:
         """Initialize database schema"""
         cursor = self.conn.cursor()
 
-        # Components table (current state)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS components (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                type TEXT NOT NULL,
-                origin TEXT,
-                status TEXT,
-                version TEXT,
-                install_path TEXT,
-                first_seen DATETIME NOT NULL,
-                last_seen DATETIME NOT NULL,
-                metadata_json TEXT,
-                UNIQUE(name, type)
-            )
-        """)
+        self._ensure_components_schema(cursor)
 
         # Invocations table (usage tracking)
         cursor.execute("""
@@ -67,16 +52,7 @@ class ToolingDatabase:
             )
         """)
 
-        # Full-text search index
-        cursor.execute("""
-            CREATE VIRTUAL TABLE IF NOT EXISTS components_fts USING fts5(
-                name,
-                description,
-                keywords,
-                content=components,
-                content_rowid=id
-            )
-        """)
+        self._ensure_components_fts_schema(cursor)
 
         # Indexes for fast queries
         cursor.execute("""
@@ -98,6 +74,167 @@ class ToolingDatabase:
 
         self.conn.commit()
 
+    def _ensure_components_schema(self, cursor: sqlite3.Cursor) -> None:
+        """Ensure components table exists and is on the latest schema."""
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='components'"
+        )
+        has_components = cursor.fetchone() is not None
+
+        if not has_components:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS components (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    platform TEXT NOT NULL DEFAULT 'claude',
+                    name TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    origin TEXT,
+                    status TEXT,
+                    version TEXT,
+                    install_path TEXT,
+                    first_seen DATETIME NOT NULL,
+                    last_seen DATETIME NOT NULL,
+                    metadata_json TEXT,
+                    UNIQUE(platform, name, type)
+                )
+                """
+            )
+            return
+
+        cursor.execute("PRAGMA table_info(components)")
+        columns = {row["name"] for row in cursor.fetchall()}
+        if "platform" not in columns:
+            self._migrate_components_add_platform(cursor)
+
+    def _migrate_components_add_platform(self, cursor: sqlite3.Cursor) -> None:
+        """
+        One-time migration: add platform dimension and adjust uniqueness.
+
+        Old: UNIQUE(name, type)
+        New: UNIQUE(platform, name, type)
+        """
+        cursor.execute("PRAGMA foreign_keys=OFF")
+        cursor.execute("BEGIN")
+        try:
+            cursor.execute("ALTER TABLE components RENAME TO components_old")
+            cursor.execute("DROP TABLE IF EXISTS components_fts")
+
+            cursor.execute(
+                """
+                CREATE TABLE components (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    platform TEXT NOT NULL DEFAULT 'claude',
+                    name TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    origin TEXT,
+                    status TEXT,
+                    version TEXT,
+                    install_path TEXT,
+                    first_seen DATETIME NOT NULL,
+                    last_seen DATETIME NOT NULL,
+                    metadata_json TEXT,
+                    UNIQUE(platform, name, type)
+                )
+                """
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO components (
+                    id, platform, name, type, origin, status, version,
+                    install_path, first_seen, last_seen, metadata_json
+                )
+                SELECT
+                    id, 'claude', name, type, origin, status, version,
+                    install_path, first_seen, last_seen, metadata_json
+                FROM components_old
+                """
+            )
+
+            cursor.execute("DROP TABLE components_old")
+
+            cursor.execute(
+                """
+                CREATE VIRTUAL TABLE components_fts USING fts5(
+                    name,
+                    description,
+                    keywords
+                )
+                """
+            )
+
+            # Rebuild FTS rows from existing metadata (best-effort).
+            cursor.execute("SELECT id, platform, name, type, metadata_json FROM components")
+            for row in cursor.fetchall():
+                description = ""
+                try:
+                    meta = json.loads(row["metadata_json"] or "{}")
+                    description = meta.get("description") or ""
+                except (json.JSONDecodeError, TypeError):
+                    description = ""
+
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO components_fts (rowid, name, description, keywords)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (row["id"], row["name"], description, f"{row['platform']} {row['type']}"),
+                )
+
+            cursor.execute("COMMIT")
+        except Exception:
+            cursor.execute("ROLLBACK")
+            raise
+        finally:
+            cursor.execute("PRAGMA foreign_keys=ON")
+
+    def _ensure_components_fts_schema(self, cursor: sqlite3.Cursor) -> None:
+        """Ensure the FTS table exists and matches the expected schema."""
+        cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='components_fts'"
+        )
+        row = cursor.fetchone()
+        ddl = (row["sql"] or "") if row else ""
+
+        # Older versions used external-content FTS pointing at `components`, but the
+        # components table doesn't have matching columns. Rebuild as standalone.
+        if row and "content=components" in ddl:
+            cursor.execute("DROP TABLE IF EXISTS components_fts")
+            row = None
+
+        if not row:
+            cursor.execute(
+                """
+                CREATE VIRTUAL TABLE components_fts USING fts5(
+                    name,
+                    description,
+                    keywords
+                )
+                """
+            )
+            self._rebuild_components_fts(cursor)
+
+    def _rebuild_components_fts(self, cursor: sqlite3.Cursor) -> None:
+        """Best-effort rebuild of FTS data from `components`."""
+        cursor.execute("DELETE FROM components_fts")
+        cursor.execute("SELECT id, platform, name, type, metadata_json FROM components")
+        for row in cursor.fetchall():
+            description = ""
+            try:
+                meta = json.loads(row["metadata_json"] or "{}")
+                description = meta.get("description") or ""
+            except (json.JSONDecodeError, TypeError):
+                description = ""
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO components_fts (rowid, name, description, keywords)
+                VALUES (?, ?, ?, ?)
+                """,
+                (row["id"], row["name"], description, f"{row['platform']} {row['type']}"),
+            )
+
     def update_components(self, scan_result: ScanResult):
         """Update components table from scan result"""
         cursor = self.conn.cursor()
@@ -108,6 +245,7 @@ class ToolingDatabase:
             metadata_dict = {
                 "name": component.name,
                 "type": component.type,
+                "platform": getattr(component, "platform", "claude"),
                 "origin": component.origin,
                 "status": component.status,
                 "last_modified": component.last_modified.isoformat(),
@@ -132,8 +270,8 @@ class ToolingDatabase:
 
             # Check if component exists
             cursor.execute(
-                "SELECT id, first_seen FROM components WHERE name = ? AND type = ?",
-                (component.name, component.type),
+                "SELECT id, first_seen FROM components WHERE platform = ? AND name = ? AND type = ?",
+                (getattr(component, "platform", "claude"), component.name, component.type),
             )
             existing = cursor.fetchone()
 
@@ -179,11 +317,12 @@ class ToolingDatabase:
                 cursor.execute(
                     """
                     INSERT INTO components
-                    (name, type, origin, status, version, install_path,
+                    (platform, name, type, origin, status, version, install_path,
                      first_seen, last_seen, metadata_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
+                        getattr(component, "platform", "claude"),
                         component.name,
                         component.type,
                         component.origin,
@@ -220,7 +359,12 @@ class ToolingDatabase:
                 INSERT OR REPLACE INTO components_fts (rowid, name, description, keywords)
                 VALUES (?, ?, ?, ?)
                 """,
-                (component_id, component.name, description, component.type),
+                (
+                    component_id,
+                    component.name,
+                    description,
+                    f"{getattr(component, 'platform', 'claude')} {component.type}",
+                ),
             )
 
         self.conn.commit()
@@ -230,6 +374,7 @@ class ToolingDatabase:
         component_name: str,
         component_type: str,
         session_id: str,
+        platform: str = "claude",
         duration_ms: Optional[int] = None,
         success: bool = True,
         error_message: Optional[str] = None,
@@ -239,8 +384,8 @@ class ToolingDatabase:
 
         # Get component ID
         cursor.execute(
-            "SELECT id FROM components WHERE name = ? AND type = ?",
-            (component_name, component_type),
+            "SELECT id FROM components WHERE platform = ? AND name = ? AND type = ?",
+            (platform, component_name, component_type),
         )
         row = cursor.fetchone()
 
@@ -287,7 +432,7 @@ class ToolingDatabase:
         # Most used components
         cursor.execute(
             """
-            SELECT c.name, c.type, COUNT(*) as invocation_count
+            SELECT c.platform, c.name, c.type, COUNT(*) as invocation_count
             FROM invocations i
             JOIN components c ON i.component_id = c.id
             WHERE i.timestamp >= datetime('now', '-' || ? || ' days')
@@ -298,14 +443,19 @@ class ToolingDatabase:
             (days,),
         )
         most_used = [
-            {"name": row["name"], "type": row["type"], "count": row["invocation_count"]}
+            {
+                "platform": row["platform"],
+                "name": row["name"],
+                "type": row["type"],
+                "count": row["invocation_count"],
+            }
             for row in cursor.fetchall()
         ]
 
         # Recent installations
         cursor.execute(
             """
-            SELECT c.name, c.type, e.timestamp, e.version
+            SELECT c.platform, c.name, c.type, e.timestamp, e.version
             FROM installation_events e
             JOIN components c ON e.component_id = c.id
             WHERE e.event_type = 'installed'
@@ -315,6 +465,7 @@ class ToolingDatabase:
         )
         recent_installs = [
             {
+                "platform": row["platform"],
                 "name": row["name"],
                 "type": row["type"],
                 "installed_at": row["timestamp"],
@@ -326,7 +477,7 @@ class ToolingDatabase:
         # Average performance by component
         cursor.execute(
             """
-            SELECT c.name, c.type, AVG(i.duration_ms) as avg_duration_ms
+            SELECT c.platform, c.name, c.type, AVG(i.duration_ms) as avg_duration_ms
             FROM invocations i
             JOIN components c ON i.component_id = c.id
             WHERE i.duration_ms IS NOT NULL
@@ -338,7 +489,7 @@ class ToolingDatabase:
             (days,),
         )
         performance_avg = {
-            f"{row['type']}:{row['name']}": row["avg_duration_ms"]
+            f"{row['platform']}:{row['type']}:{row['name']}": row["avg_duration_ms"]
             for row in cursor.fetchall()
         }
 
@@ -368,6 +519,7 @@ class ToolingDatabase:
 
     def get_components(
         self,
+        platform: Optional[str] = None,
         type: Optional[str] = None,
         origin: Optional[str] = None,
         status: Optional[str] = None,
@@ -377,6 +529,10 @@ class ToolingDatabase:
 
         query = "SELECT * FROM components WHERE 1=1"
         params = []
+
+        if platform:
+            query += " AND platform = ?"
+            params.append(platform)
 
         if type:
             query += " AND type = ?"

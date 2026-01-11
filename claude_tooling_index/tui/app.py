@@ -11,6 +11,32 @@ from ..scanner import ToolingScanner
 from ..analytics import AnalyticsTracker
 
 
+class PlatformFilter(Horizontal):
+    """Filter buttons for platforms (claude/codex)"""
+
+    DEFAULT_CSS = """
+    PlatformFilter {
+        height: 3;
+        width: 100%;
+        padding: 0 1;
+    }
+
+    PlatformFilter Button {
+        min-width: 10;
+        margin: 0 1 0 0;
+    }
+
+    PlatformFilter Button.active {
+        background: $accent;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        yield Button("All", id="platform-filter-all", classes="active")
+        yield Button("Claude", id="platform-filter-claude")
+        yield Button("Codex", id="platform-filter-codex")
+
+
 class TypeFilter(Horizontal):
     """Filter buttons for component types"""
 
@@ -32,13 +58,13 @@ class TypeFilter(Horizontal):
     """
 
     def compose(self) -> ComposeResult:
-        yield Button("All", id="filter-all", classes="active")
-        yield Button("Skills", id="filter-skill")
-        yield Button("Plugins", id="filter-plugin")
-        yield Button("Commands", id="filter-command")
-        yield Button("Hooks", id="filter-hook")
-        yield Button("MCPs", id="filter-mcp")
-        yield Button("Binaries", id="filter-binary")
+        yield Button("All", id="type-filter-all", classes="active")
+        yield Button("Skills", id="type-filter-skill")
+        yield Button("Plugins", id="type-filter-plugin")
+        yield Button("Commands", id="type-filter-command")
+        yield Button("Hooks", id="type-filter-hook")
+        yield Button("MCPs", id="type-filter-mcp")
+        yield Button("Binaries", id="type-filter-binary")
 
 
 class StatsPanel(Static):
@@ -178,7 +204,7 @@ class ToolingIndexTUI(App):
     """Terminal UI dashboard for Claude Code Tooling Index"""
 
     CSS_PATH = "styles.tcss"
-    TITLE = "◉ Claude Code Tooling Index"
+    TITLE = "◉ Tooling Index"
     SUB_TITLE = "Component Dashboard"
 
     BINDINGS = [
@@ -196,6 +222,9 @@ class ToolingIndexTUI(App):
     ]
 
     def __init__(self, *args, **kwargs):
+        self.platform = (kwargs.pop("platform", "claude") or "claude").lower()
+        self.claude_home = kwargs.pop("claude_home", None)
+        self.codex_home = kwargs.pop("codex_home", None)
         super().__init__(*args, **kwargs)
         self.scan_result = None  # Core ScanResult for component list
         self.extended_result = None  # ExtendedScanResult with Phase 6 metrics
@@ -209,6 +238,7 @@ class ToolingIndexTUI(App):
             # Left sidebar
             with Vertical(id="sidebar"):
                 yield SearchBar(id="search")
+                yield PlatformFilter(id="platform-filter")
                 yield TypeFilter(id="type-filter")
                 yield ComponentList(id="component-list")
                 yield StatsPanel(id="stats")
@@ -227,14 +257,28 @@ class ToolingIndexTUI(App):
     def _load_components(self) -> None:
         """Load components from scanner including Phase 6 extended metrics"""
         try:
-            scanner = ToolingScanner()
-            # Use extended scan to get Phase 6 metrics
-            self.extended_result = scanner.scan_extended()
-            self.scan_result = self.extended_result.core
+            if self.platform == "claude":
+                scanner = ToolingScanner(claude_home=self.claude_home)
+                self.extended_result = scanner.scan_extended()
+                self.scan_result = self.extended_result.core
+            else:
+                from ..multi_scanner import MultiToolingScanner
+
+                scanner = MultiToolingScanner(
+                    claude_home=self.claude_home, codex_home=self.codex_home
+                )
+                self.scan_result = scanner.scan_all(platform=self.platform)
+                self.extended_result = self.scan_result
 
             # Update component list with core scan result
             component_list = self.query_one("#component-list", ComponentList)
             component_list.load_components(self.scan_result)
+            if self.platform != "all":
+                component_list.filter_by_platform(self.platform)
+                for button in self.query("PlatformFilter Button"):
+                    button.remove_class("active")
+                    if button.id == f"platform-filter-{self.platform}":
+                        button.add_class("active")
 
             # Update stats with extended result (includes activity, events, insights)
             stats = self.query_one("#stats", StatsPanel)
@@ -264,23 +308,39 @@ class ToolingIndexTUI(App):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle filter button presses"""
         button_id = event.button.id
-        if not button_id or not button_id.startswith("filter-"):
+        if not button_id:
             return
 
-        # Extract filter type
-        filter_type = button_id.replace("filter-", "")
-        self._apply_type_filter(filter_type if filter_type != "all" else None)
+        if button_id.startswith("type-filter-"):
+            filter_type = button_id.replace("type-filter-", "")
+            self._apply_type_filter(filter_type if filter_type != "all" else None)
 
-        # Update button styles
-        for button in self.query("TypeFilter Button"):
-            button.remove_class("active")
-        event.button.add_class("active")
+            for button in self.query("TypeFilter Button"):
+                button.remove_class("active")
+            event.button.add_class("active")
+            return
+
+        if button_id.startswith("platform-filter-"):
+            filter_platform = button_id.replace("platform-filter-", "")
+            self._apply_platform_filter(
+                filter_platform if filter_platform != "all" else None
+            )
+
+            for button in self.query("PlatformFilter Button"):
+                button.remove_class("active")
+            event.button.add_class("active")
+            return
 
     def _apply_type_filter(self, component_type: str | None) -> None:
         """Apply a type filter"""
         self.current_type_filter = component_type
         component_list = self.query_one("#component-list", ComponentList)
         component_list.filter_by_type(component_type)
+
+    def _apply_platform_filter(self, platform: str | None) -> None:
+        """Apply a platform filter"""
+        component_list = self.query_one("#component-list", ComponentList)
+        component_list.filter_by_platform(platform)
 
     def action_quit(self) -> None:
         """Quit the application"""

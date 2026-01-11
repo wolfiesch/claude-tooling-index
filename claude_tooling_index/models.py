@@ -17,6 +17,7 @@ class ComponentMetadata:
     status: str  # "active" | "disabled" | "error"
     last_modified: datetime
     install_path: Path
+    platform: str = "claude"  # "claude" | "codex"
 
     # Type will be set by subclasses in __post_init__
     type: str = ""  # "skill" | "plugin" | "command" | "hook" | "mcp" | "binary"

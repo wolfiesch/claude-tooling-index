@@ -76,6 +76,7 @@ class JSONExporter:
         """Serialize a component to a dictionary"""
         data = {
             "name": component.name,
+            "platform": getattr(component, "platform", "claude"),
             "type": component.type,
             "origin": component.origin,
             "status": component.status,
