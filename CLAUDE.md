@@ -89,6 +89,33 @@ cd hooks && ./build_hook.sh
 - **FTS5 search**: Standalone virtual table (not content-linked) for component search
 - **Platform dimension**: Components keyed by `(platform, name, type)` tuple
 
+### Multi-Platform Support (Claude + Codex)
+
+The tool supports scanning both Claude Code (`~/.claude`) and OpenAI Codex CLI (`~/.codex`) setups:
+
+**Platform-specific scanners:**
+- `ToolingScanner` → Claude only (`~/.claude`)
+- `CodexToolingScanner` → Codex only (`~/.codex`)
+- `MultiToolingScanner` → Orchestrates both, merges results
+
+**Codex differences:**
+- MCPs configured in `~/.codex/config.toml` (TOML format) vs `~/.claude/mcp.json`
+- `CodexMCPScanner` parses `[mcp_servers.<name>]` sections from TOML
+- Codex currently supports: Skills, MCPs (no Plugins, Commands, Hooks, Binaries)
+
+**CLI platform flag:**
+```bash
+tooling-index scan --platform claude   # Default
+tooling-index scan --platform codex    # Codex only
+tooling-index scan --platform all      # Both platforms merged
+tooling-index list --platform codex    # Filter by platform
+tooling-index tui --platform all       # TUI with platform filter buttons
+```
+
+**Database schema:**
+- Components uniquely identified by `(platform, name, type)` tuple
+- Auto-migration adds `platform` column to existing databases
+
 ## Database Location
 
 Default: `~/.claude/data/tooling_index.db`
