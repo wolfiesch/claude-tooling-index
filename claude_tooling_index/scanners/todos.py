@@ -1,4 +1,4 @@
-"""Todo Scanner - extracts task metrics from ~/.claude/todos/*.json"""
+"""Todo scanner - extracts task metrics from todo JSON files."""
 
 import json
 import os
@@ -9,13 +9,13 @@ from ..models import TaskMetrics
 
 
 class TodoScanner:
-    """Scans todo JSON files for task completion metrics"""
+    """Scan todo JSON files for task completion metrics."""
 
     def __init__(self, todos_dir: Optional[Path] = None):
         self.todos_dir = todos_dir or (Path.home() / ".claude" / "todos")
 
     def scan(self) -> Optional[TaskMetrics]:
-        """Scan todo files and extract task metrics"""
+        """Scan todo files and extract task metrics."""
         if not self.todos_dir.exists():
             return None
 

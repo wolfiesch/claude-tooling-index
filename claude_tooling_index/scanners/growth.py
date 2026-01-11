@@ -1,4 +1,4 @@
-"""Growth Scanner - extracts L1-L5 progression metrics from agentic-growth framework"""
+"""Growth scanner - extracts L1-L5 progression metrics from agentic-growth."""
 
 import json
 import re
@@ -9,13 +9,13 @@ from ..models import GrowthMetrics
 
 
 class GrowthScanner:
-    """Scans agentic-growth framework for progression metrics"""
+    """Scan agentic-growth framework for progression metrics."""
 
     def __init__(self, growth_dir: Optional[Path] = None):
         self.growth_dir = growth_dir or (Path.home() / ".claude" / "agentic-growth")
 
     def scan(self) -> Optional[GrowthMetrics]:
-        """Scan growth framework and extract metrics"""
+        """Scan growth framework and extract metrics."""
         if not self.growth_dir.exists():
             return None
 
@@ -46,7 +46,7 @@ class GrowthScanner:
         return result
 
     def _count_edges(self, edges_dir: Path) -> int:
-        """Count total edge files (EDGE-XXX.md)"""
+        """Count total edge files (`EDGE-XXX.md`)."""
         count = 0
         try:
             for subdir in edges_dir.iterdir():
@@ -57,7 +57,7 @@ class GrowthScanner:
         return count
 
     def _categorize_edges(self, edges_dir: Path) -> dict:
-        """Count edges by category subdirectory"""
+        """Count edges by category subdirectory."""
         categories = {}
         try:
             for subdir in edges_dir.iterdir():
@@ -70,7 +70,7 @@ class GrowthScanner:
         return categories
 
     def _count_patterns(self, patterns_dir: Path) -> int:
-        """Count total pattern files"""
+        """Count total pattern files."""
         count = 0
         try:
             for subdir in patterns_dir.iterdir():
@@ -81,7 +81,7 @@ class GrowthScanner:
         return count
 
     def _categorize_patterns(self, patterns_dir: Path) -> dict:
-        """Count patterns by category"""
+        """Count patterns by category."""
         categories = {}
         try:
             for subdir in patterns_dir.iterdir():
@@ -94,7 +94,7 @@ class GrowthScanner:
         return categories
 
     def _parse_progression_level(self, progression_file: Path) -> str:
-        """Extract current L1-L5 level from progression.md"""
+        """Extract current L1-L5 level from progression.md."""
         try:
             content = progression_file.read_text()
             # Look for patterns like "L4" or "L4: Meta-Engineer" with CURRENT marker
@@ -109,7 +109,9 @@ class GrowthScanner:
                 return match.group(1)
 
             # Pattern 3: Look for the highest level marked as achieved
-            levels_found = re.findall(r"(L[1-5]).*(?:✅|achieved|complete)", content, re.I)
+            levels_found = re.findall(
+                r"(L[1-5]).*(?:✅|achieved|complete)", content, re.I
+            )
             if levels_found:
                 # Return highest level
                 return max(levels_found, key=lambda x: int(x[1]))
@@ -119,7 +121,7 @@ class GrowthScanner:
         return "L1"  # Default
 
     def _count_project_edges(self, project_edges_file: Path) -> int:
-        """Count projects with documented edges"""
+        """Count projects with documented edges."""
         try:
             data = json.loads(project_edges_file.read_text())
             # Exclude _comment and _categories keys

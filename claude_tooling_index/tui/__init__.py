@@ -1,4 +1,4 @@
-"""TUI Dashboard for Claude Tooling Index"""
+"""TUI dashboard for the tooling index."""
 
 from .app import ToolingIndexTUI
 

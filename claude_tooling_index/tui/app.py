@@ -81,7 +81,11 @@ class StatsPanel(Static):
     def update_stats(self, extended_result) -> None:
         """Update the stats display with extended metrics"""
         # Get core scan result
-        core = extended_result.core if hasattr(extended_result, 'core') else extended_result
+        core = (
+            extended_result.core
+            if hasattr(extended_result, "core")
+            else extended_result
+        )
         total = core.total_count
         skills = len(core.skills)
         plugins = len(core.plugins)
@@ -109,7 +113,7 @@ class StatsPanel(Static):
         lines = [line1]
 
         # Line 2: Activity metrics (from user_settings)
-        if hasattr(extended_result, 'user_settings') and extended_result.user_settings:
+        if hasattr(extended_result, "user_settings") and extended_result.user_settings:
             us = extended_result.user_settings
             top_skill = us.top_skills[0].name if us.top_skills else "none"
             top_count = us.top_skills[0].usage_count if us.top_skills else 0
@@ -123,7 +127,7 @@ class StatsPanel(Static):
             lines.append(line2)
 
         # Line 3: Event metrics (tool usage)
-        if hasattr(extended_result, 'event_metrics') and extended_result.event_metrics:
+        if hasattr(extended_result, "event_metrics") and extended_result.event_metrics:
             em = extended_result.event_metrics
             top_tool = em.top_tools[0][0] if em.top_tools else "none"
             top_tool_count = em.top_tools[0][1] if em.top_tools else 0
@@ -135,11 +139,14 @@ class StatsPanel(Static):
             lines.append(line3)
 
         # Line 4: Insights
-        if hasattr(extended_result, 'insight_metrics') and extended_result.insight_metrics:
+        if (
+            hasattr(extended_result, "insight_metrics")
+            and extended_result.insight_metrics
+        ):
             im = extended_result.insight_metrics
-            warnings = im.by_category.get('warning', 0)
-            tradeoffs = im.by_category.get('tradeoff', 0)
-            patterns = im.by_category.get('pattern', 0)
+            warnings = im.by_category.get("warning", 0)
+            tradeoffs = im.by_category.get("tradeoff", 0)
+            patterns = im.by_category.get("pattern", 0)
             line4 = (
                 f"[#FFD580]📈[/#FFD580] Insights: [#FFD580]{im.total_insights}[/#FFD580] total  "
                 f"│  [#FFD580]{warnings}[/#FFD580] warnings  "
@@ -149,9 +156,14 @@ class StatsPanel(Static):
             lines.append(line4)
 
         # Line 5: Session metrics (T1)
-        if hasattr(extended_result, 'session_metrics') and extended_result.session_metrics:
+        if (
+            hasattr(extended_result, "session_metrics")
+            and extended_result.session_metrics
+        ):
             sm = extended_result.session_metrics
-            project_count = len(sm.project_distribution) if sm.project_distribution else 0
+            project_count = (
+                len(sm.project_distribution) if sm.project_distribution else 0
+            )
             line5 = (
                 f"[#B39DDB]📁[/#B39DDB] Sessions: [#B39DDB]{sm.total_sessions}[/#B39DDB] total  "
                 f"│  [#B39DDB]{sm.prompts_per_session:.1f}[/#B39DDB] prompts/session  "
@@ -160,7 +172,7 @@ class StatsPanel(Static):
             lines.append(line5)
 
         # Line 6: Task metrics (T1)
-        if hasattr(extended_result, 'task_metrics') and extended_result.task_metrics:
+        if hasattr(extended_result, "task_metrics") and extended_result.task_metrics:
             tm = extended_result.task_metrics
             completion_pct = tm.completion_rate * 100
             line6 = (
@@ -172,10 +184,17 @@ class StatsPanel(Static):
             lines.append(line6)
 
         # Line 7: Token economics (T2)
-        if hasattr(extended_result, 'transcript_metrics') and extended_result.transcript_metrics:
+        if (
+            hasattr(extended_result, "transcript_metrics")
+            and extended_result.transcript_metrics
+        ):
             trm = extended_result.transcript_metrics
             total_tokens = trm.total_input_tokens + trm.total_output_tokens
-            cache_efficiency = (trm.total_cache_read_tokens / trm.total_input_tokens * 100) if trm.total_input_tokens > 0 else 0
+            cache_efficiency = (
+                (trm.total_cache_read_tokens / trm.total_input_tokens * 100)
+                if trm.total_input_tokens > 0
+                else 0
+            )
             top_tool = trm.top_tools[0][0] if trm.top_tools else "N/A"
             line7 = (
                 f"[#90CAF9]🪙[/#90CAF9] Tokens: [#90CAF9]{total_tokens:,}[/#90CAF9] total  "
@@ -185,7 +204,10 @@ class StatsPanel(Static):
             lines.append(line7)
 
         # Line 8: Growth progression (T2)
-        if hasattr(extended_result, 'growth_metrics') and extended_result.growth_metrics:
+        if (
+            hasattr(extended_result, "growth_metrics")
+            and extended_result.growth_metrics
+        ):
             gm = extended_result.growth_metrics
             line8 = (
                 f"[#A5D6A7]🌱[/#A5D6A7] Growth: [#A5D6A7]{gm.current_level}[/#A5D6A7]  "

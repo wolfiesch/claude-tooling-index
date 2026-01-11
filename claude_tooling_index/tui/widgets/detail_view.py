@@ -1,4 +1,4 @@
-"""Detail View Widget - Shows component details"""
+"""Detail view widget - shows component details."""
 
 import json
 from typing import Any, Optional
@@ -11,7 +11,7 @@ from textual.widgets import Static
 
 
 class DetailView(VerticalScroll):
-    """Panel showing detailed component information"""
+    """Panel showing detailed component information."""
 
     DEFAULT_CSS = """
     DetailView {
@@ -29,13 +29,13 @@ class DetailView(VerticalScroll):
         yield Static(id="detail-content")
 
     def show_component(self, component: Any) -> None:
-        """Display details for the given component"""
+        """Display details for the given component."""
         self.current_component = component
         content = self._build_content(component)
         self.query_one("#detail-content", Static).update(content)
 
     def clear(self) -> None:
-        """Clear the detail view"""
+        """Clear the detail view."""
         self.current_component = None
         welcome = Text()
         welcome.append("◉ ", style="#DA7756")
@@ -43,15 +43,19 @@ class DetailView(VerticalScroll):
         self.query_one("#detail-content", Static).update(welcome)
 
     def _build_content(self, component: Any) -> Panel:
-        """Build rich content for the component"""
+        """Build rich content for the component."""
         content = []
 
         # Name and type header
         comp_type = getattr(component, "type", "unknown")
         status = getattr(component, "status", "unknown")
-        status_emoji = {"active": "🟢", "disabled": "⚪", "error": "🔴", "unknown": "🟡"}.get(
-            status, "❓"
-        )
+        status_emojis = {
+            "active": "🟢",
+            "disabled": "⚪",
+            "error": "🔴",
+            "unknown": "🟡",
+        }
+        status_emoji = status_emojis.get(status, "❓")
 
         # Claude orange color
         claude_orange = "#DA7756"
@@ -182,7 +186,9 @@ class DetailView(VerticalScroll):
         dependencies = getattr(component, "dependencies", None)
         if dependencies and len(dependencies) > 0:
             content.append("")
-            content.append(Text("Dependencies", style=f"bold underline {claude_orange}"))
+            content.append(
+                Text("Dependencies", style=f"bold underline {claude_orange}")
+            )
             for dep in dependencies:
                 content.append(Text(f"  • {dep}"))
 
@@ -204,7 +210,7 @@ class DetailView(VerticalScroll):
         )
 
     def _format_size(self, size_bytes: int) -> str:
-        """Format file size in human-readable format"""
+        """Format file size in a human-readable format."""
         if size_bytes < 1024:
             return f"{size_bytes}B"
         elif size_bytes < 1024 * 1024:

@@ -1,4 +1,4 @@
-"""Skill scanner - extracts metadata from SKILL.md files"""
+"""Skill scanner - extracts metadata from `SKILL.md` files."""
 
 import json
 import re
@@ -12,11 +12,18 @@ from ..models import SkillMetadata
 
 
 class PerformanceMetricsExtractor:
-    """Extract performance metrics from SKILL.md files"""
+    """Extract performance metrics from `SKILL.md` files."""
 
     def extract_metrics(self, skill_md_content: str) -> Optional[Dict]:
-        """Extract performance metrics from SKILL.md.
-        Priority: Markdown tables > Regex patterns
+        """Extract performance metrics from `SKILL.md` content.
+
+        Priority: Markdown tables > regex patterns.
+
+        Args:
+            skill_md_content: Raw `SKILL.md` contents.
+
+        Returns:
+            A dictionary of extracted metrics if found, otherwise `None`.
         """
         # Try table parsing first
         table_metrics = self._parse_tables(skill_md_content)
@@ -27,7 +34,7 @@ class PerformanceMetricsExtractor:
         return self._parse_text_patterns(skill_md_content)
 
     def _parse_tables(self, content: str) -> Optional[Dict]:
-        """Parse markdown tables for performance data"""
+        """Parse markdown tables for performance data."""
         # Look for performance-related section headers
         perf_section = self._extract_section(
             content, ["## Performance", "### Performance", "## Benchmarks"]
@@ -45,11 +52,7 @@ class PerformanceMetricsExtractor:
             # Expected headers: Operation, Time, Speedup, etc.
             for row in table["rows"]:
                 operation = row.get("Operation") or row.get("operation")
-                time = (
-                    row.get("Gateway CLI")
-                    or row.get("Time")
-                    or row.get("time")
-                )
+                time = row.get("Gateway CLI") or row.get("Time") or row.get("time")
                 speedup = row.get("Speedup") or row.get("speedup")
 
                 if operation:
@@ -58,7 +61,7 @@ class PerformanceMetricsExtractor:
         return metrics if metrics else None
 
     def _parse_text_patterns(self, content: str) -> Optional[Dict]:
-        """Fallback: Extract metrics using regex patterns"""
+        """Fallback: extract metrics using regex patterns."""
         metrics = {}
 
         # Pattern 1: "5.6x faster"
@@ -81,10 +84,8 @@ class PerformanceMetricsExtractor:
 
         return metrics if metrics else None
 
-    def _extract_section(
-        self, content: str, headers: List[str]
-    ) -> Optional[str]:
-        """Extract content under section headers"""
+    def _extract_section(self, content: str, headers: List[str]) -> Optional[str]:
+        """Extract content under the first matching section header."""
         for header in headers:
             pattern = rf"{re.escape(header)}.*?\n(.*?)(?=\n#{1,3}\s|\Z)"
             match = re.search(pattern, content, re.DOTALL)
@@ -93,7 +94,7 @@ class PerformanceMetricsExtractor:
         return None
 
     def _extract_markdown_tables(self, section: str) -> List[Dict]:
-        """Parse markdown tables into structured data"""
+        """Parse markdown tables into structured data."""
         tables = []
         # Split by table boundaries (header row with pipes)
         table_pattern = r"\|.*?\|\n\|[-:\s|]+\|\n((?:\|.*?\|\n)+)"
@@ -103,7 +104,7 @@ class PerformanceMetricsExtractor:
         return tables
 
     def _parse_single_table(self, table_text: str) -> Dict:
-        """Parse a single markdown table"""
+        """Parse a single markdown table."""
         lines = [line.strip() for line in table_text.split("\n") if line.strip()]
 
         # Extract headers
@@ -122,16 +123,18 @@ class PerformanceMetricsExtractor:
 
 
 class SkillScanner:
-    """Scans ~/.claude/skills/ directory for skill metadata"""
+    """Scan a skills directory for skill metadata."""
 
-    def __init__(self, skills_dir: Path, platform: str = "claude", origin: str = "in-house"):
+    def __init__(
+        self, skills_dir: Path, platform: str = "claude", origin: str = "in-house"
+    ):
         self.skills_dir = skills_dir
         self.platform = platform
         self.origin = origin
         self.perf_extractor = PerformanceMetricsExtractor()
 
     def scan(self) -> List[SkillMetadata]:
-        """Scan all skills in the skills directory"""
+        """Scan all skills in the skills directory."""
         skills = []
 
         if not self.skills_dir.exists():
@@ -174,7 +177,7 @@ class SkillScanner:
     def _scan_skill(
         self, skill_path: Path, is_disabled: bool = False
     ) -> Optional[SkillMetadata]:
-        """Scan a single skill directory"""
+        """Scan a single skill directory."""
         skill_md = skill_path / "SKILL.md"
 
         # Must have SKILL.md to be a valid skill
@@ -216,14 +219,12 @@ class SkillScanner:
             file_count=file_count,
             total_lines=total_lines,
             has_docs=skill_md.exists(),
-            performance_notes=json.dumps(perf_metrics)
-            if perf_metrics
-            else None,
+            performance_notes=json.dumps(perf_metrics) if perf_metrics else None,
             dependencies=[],  # TODO: Extract from requirements or imports
         )
 
     def _extract_frontmatter(self, content: str) -> Dict:
-        """Extract YAML frontmatter from SKILL.md"""
+        """Extract YAML frontmatter from `SKILL.md`."""
         # Match YAML frontmatter between --- markers
         pattern = r"^---\s*\n(.*?)\n---\s*\n"
         match = re.match(pattern, content, re.DOTALL)
@@ -237,7 +238,7 @@ class SkillScanner:
             return {}
 
     def _count_files_and_lines(self, skill_path: Path) -> tuple[int, int]:
-        """Count files and total lines in skill directory"""
+        """Count files and total lines in a skill directory."""
         file_count = 0
         total_lines = 0
 

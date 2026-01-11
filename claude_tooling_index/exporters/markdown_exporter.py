@@ -1,4 +1,7 @@
-"""Markdown Exporter - Human-readable documentation for tooling index"""
+"""Markdown exporter for the tooling index.
+
+This exporter produces a human-readable Markdown document from a `ScanResult`.
+"""
 
 import json
 from datetime import datetime
@@ -17,7 +20,7 @@ from ..models import (
 
 
 class MarkdownExporter:
-    """Export scan results and components as Markdown documentation"""
+    """Export scan results and components as Markdown documentation."""
 
     def __init__(
         self,
@@ -30,12 +33,27 @@ class MarkdownExporter:
         self.include_toc = include_toc
 
     def export_scan_result(self, result: ScanResult) -> str:
-        """Export full scan result to Markdown"""
+        """Export a full scan result to Markdown.
+
+        Args:
+            result: Scan result to export.
+
+        Returns:
+            A Markdown document as a string.
+        """
         lines = []
 
         # Header
-        platforms = sorted({getattr(c, "platform", "claude") for c in result.all_components}) if result.total_count else ["claude"]
-        header = "Claude Code Tooling Index" if platforms == ["claude"] else "Tooling Index (Claude + Codex)"
+        platforms = (
+            sorted({getattr(c, "platform", "claude") for c in result.all_components})
+            if result.total_count
+            else ["claude"]
+        )
+        header = (
+            "Claude Code Tooling Index"
+            if platforms == ["claude"]
+            else "Tooling Index (Claude + Codex)"
+        )
         lines.append(f"# {header}")
         lines.append("")
         lines.append(f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*")
@@ -127,22 +145,35 @@ class MarkdownExporter:
         return "\n".join(lines)
 
     def export_to_file(self, result: ScanResult, output_path: Path):
-        """Export to a Markdown file"""
+        """Export a scan result to a Markdown file.
+
+        Args:
+            result: Scan result to export.
+            output_path: Destination file path.
+        """
         md_str = self.export_scan_result(result)
         with open(output_path, "w") as f:
             f.write(md_str)
 
     def _format_skills_table(self, skills: List[SkillMetadata]) -> List[str]:
-        """Format skills as a table"""
+        """Format skills as a Markdown table."""
         lines = []
-        lines.append("| Name | Platform | Version | Status | Files | Lines | Description |")
-        lines.append("|------|----------|---------|--------|-------|-------|-------------|")
+        lines.append(
+            "| Name | Platform | Version | Status | Files | Lines | Description |"
+        )
+        lines.append(
+            "|------|----------|---------|--------|-------|-------|-------------|"
+        )
 
         for skill in sorted(skills, key=lambda s: s.name.lower()):
             version = skill.version or "-"
             status = self._status_badge(skill.status)
             platform = getattr(skill, "platform", "claude")
-            desc = (skill.description[:50] + "...") if len(skill.description) > 50 else skill.description
+            desc = (
+                (skill.description[:50] + "...")
+                if len(skill.description) > 50
+                else skill.description
+            )
             lines.append(
                 f"| {skill.name} | {platform} | {version} | {status} | {skill.file_count} | {skill.total_lines} | {desc} |"
             )
@@ -150,7 +181,7 @@ class MarkdownExporter:
         return lines
 
     def _format_skill_detail(self, skill: SkillMetadata) -> List[str]:
-        """Format detailed skill information"""
+        """Format detailed skill information."""
         lines = []
         lines.append(f"### {skill.name}")
         lines.append("")
@@ -187,7 +218,7 @@ class MarkdownExporter:
         return lines
 
     def _format_plugins_table(self, plugins: List[PluginMetadata]) -> List[str]:
-        """Format plugins as a table"""
+        """Format plugins as a Markdown table."""
         lines = []
         lines.append("| Name | Platform | Version | Marketplace | Origin | Status |")
         lines.append("|------|----------|---------|-------------|--------|--------|")
@@ -202,7 +233,7 @@ class MarkdownExporter:
         return lines
 
     def _format_commands_table(self, commands: List[CommandMetadata]) -> List[str]:
-        """Format commands as a table"""
+        """Format commands as a Markdown table."""
         lines = []
         lines.append("| Command | Platform | Description | Origin | Status |")
         lines.append("|---------|----------|-------------|--------|--------|")
@@ -210,13 +241,19 @@ class MarkdownExporter:
         for cmd in sorted(commands, key=lambda c: c.name.lower()):
             status = self._status_badge(cmd.status)
             platform = getattr(cmd, "platform", "claude")
-            desc = (cmd.description[:60] + "...") if len(cmd.description) > 60 else cmd.description
-            lines.append(f"| /{cmd.name} | {platform} | {desc} | {cmd.origin} | {status} |")
+            desc = (
+                (cmd.description[:60] + "...")
+                if len(cmd.description) > 60
+                else cmd.description
+            )
+            lines.append(
+                f"| /{cmd.name} | {platform} | {desc} | {cmd.origin} | {status} |"
+            )
 
         return lines
 
     def _format_hooks_table(self, hooks: List[HookMetadata]) -> List[str]:
-        """Format hooks as a table"""
+        """Format hooks as a Markdown table."""
         lines = []
         lines.append("| Name | Platform | Trigger | Language | Size | Status |")
         lines.append("|------|----------|---------|----------|------|--------|")
@@ -232,7 +269,7 @@ class MarkdownExporter:
         return lines
 
     def _format_mcps_table(self, mcps: List[MCPMetadata]) -> List[str]:
-        """Format MCPs as a table"""
+        """Format MCPs as a Markdown table."""
         lines = []
         lines.append("| Name | Platform | Command | Transport | Origin | Status |")
         lines.append("|------|----------|---------|-----------|--------|--------|")
@@ -248,7 +285,7 @@ class MarkdownExporter:
         return lines
 
     def _format_binaries_table(self, binaries: List[BinaryMetadata]) -> List[str]:
-        """Format binaries as a table"""
+        """Format binaries as a Markdown table."""
         lines = []
         lines.append("| Name | Platform | Language | Size | Executable | Status |")
         lines.append("|------|----------|----------|------|------------|--------|")
@@ -265,7 +302,7 @@ class MarkdownExporter:
         return lines
 
     def _status_badge(self, status: str) -> str:
-        """Format status as an emoji badge"""
+        """Format status as an emoji badge."""
         badges = {
             "active": "🟢 Active",
             "disabled": "⚪ Disabled",
@@ -275,7 +312,7 @@ class MarkdownExporter:
         return badges.get(status, status)
 
     def _format_size(self, size_bytes: int) -> str:
-        """Format file size in human-readable format"""
+        """Format file size in a human-readable format."""
         if size_bytes < 1024:
             return f"{size_bytes}B"
         elif size_bytes < 1024 * 1024:

@@ -1,4 +1,4 @@
-"""Insights Scanner - extracts analytics from ~/.claude/data/insights.db"""
+"""Insights scanner - extracts analytics from `~/.claude/data/insights.db`."""
 
 import sqlite3
 from pathlib import Path
@@ -8,7 +8,7 @@ from ..models import InsightMetrics
 
 
 class InsightsScanner:
-    """Scans insights.db for categorized insights and patterns"""
+    """Scan insights.db for categorized insights and patterns."""
 
     def __init__(self, insights_db_path: Optional[Path] = None):
         self.insights_db_path = insights_db_path or (
@@ -16,7 +16,7 @@ class InsightsScanner:
         )
 
     def scan(self) -> Optional[InsightMetrics]:
-        """Scan insights database and extract analytics"""
+        """Scan insights database and extract analytics."""
         if not self.insights_db_path.exists():
             return None
 
@@ -85,7 +85,8 @@ class InsightsScanner:
             """
             )
             result.recent_warnings = [
-                row[0][:200] for row in cursor.fetchall()  # Truncate long text
+                row[0][:200]
+                for row in cursor.fetchall()  # Truncate long text
             ]
 
             # Get recent patterns (last 10)
@@ -120,7 +121,7 @@ class InsightsScanner:
         return result
 
     def search_insights(self, query: str, limit: int = 20) -> list:
-        """Search insights using FTS5 full-text search"""
+        """Search insights using FTS5 full-text search."""
         if not self.insights_db_path.exists():
             return []
 

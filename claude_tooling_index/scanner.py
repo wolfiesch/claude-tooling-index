@@ -1,4 +1,8 @@
-"""Main scanner orchestrator - coordinates all component scanners"""
+"""Claude home scanner orchestrator.
+
+This module coordinates all component scanners for a single Claude home
+directory (typically `~/.claude`).
+"""
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -27,7 +31,7 @@ from .scanners import (
 
 
 class ToolingScanner:
-    """Scans ~/.claude directory and extracts all component metadata"""
+    """Scan a Claude home directory and extract component metadata."""
 
     def __init__(self, claude_home: Optional[Path] = None):
         self.claude_home = claude_home or self._detect_claude_home()
@@ -58,16 +62,15 @@ class ToolingScanner:
         self.growth_scanner = GrowthScanner(self.claude_home / "agentic-growth")
 
     def scan_all(self, parallel: bool = True) -> ScanResult:
-        """Scan all components in parallel or sequentially.
+        """Scan all core components.
 
         Args:
             parallel: If True, run scanners in parallel (faster).
-                      If False, run sequentially (easier debugging).
+                If False, run sequentially (easier debugging).
 
         Returns:
-            ScanResult with all scanned components
+            The scan result with all scanned components and any captured errors.
         """
-        datetime.now()
         errors = []
 
         if parallel:
@@ -81,16 +84,28 @@ class ToolingScanner:
         return result
 
     def _scan_parallel(self, errors: list) -> ScanResult:
-        """Scan all components in parallel using ThreadPoolExecutor"""
+        """Scan all components in parallel using `ThreadPoolExecutor`."""
         with ThreadPoolExecutor(max_workers=6) as executor:
             # Submit all scanner tasks
             futures = {
-                "skills": executor.submit(self._safe_scan, self.skills_scanner.scan, "skills", errors),
-                "plugins": executor.submit(self._safe_scan, self.plugins_scanner.scan, "plugins", errors),
-                "commands": executor.submit(self._safe_scan, self.commands_scanner.scan, "commands", errors),
-                "hooks": executor.submit(self._safe_scan, self.hooks_scanner.scan, "hooks", errors),
-                "mcps": executor.submit(self._safe_scan, self.mcps_scanner.scan, "mcps", errors),
-                "binaries": executor.submit(self._safe_scan, self.binaries_scanner.scan, "binaries", errors),
+                "skills": executor.submit(
+                    self._safe_scan, self.skills_scanner.scan, "skills", errors
+                ),
+                "plugins": executor.submit(
+                    self._safe_scan, self.plugins_scanner.scan, "plugins", errors
+                ),
+                "commands": executor.submit(
+                    self._safe_scan, self.commands_scanner.scan, "commands", errors
+                ),
+                "hooks": executor.submit(
+                    self._safe_scan, self.hooks_scanner.scan, "hooks", errors
+                ),
+                "mcps": executor.submit(
+                    self._safe_scan, self.mcps_scanner.scan, "mcps", errors
+                ),
+                "binaries": executor.submit(
+                    self._safe_scan, self.binaries_scanner.scan, "binaries", errors
+                ),
             }
 
             # Collect results
@@ -104,7 +119,7 @@ class ToolingScanner:
             )
 
     def _scan_sequential(self, errors: list) -> ScanResult:
-        """Scan all components sequentially (for debugging)"""
+        """Scan all components sequentially (for debugging)."""
         return ScanResult(
             skills=self._safe_scan(self.skills_scanner.scan, "skills", errors),
             plugins=self._safe_scan(self.plugins_scanner.scan, "plugins", errors),
@@ -115,7 +130,7 @@ class ToolingScanner:
         )
 
     def _safe_scan(self, scan_func, component_type: str, errors: list):
-        """Wrapper to catch and log scanner errors"""
+        """Run a scanner function and capture errors instead of raising."""
         try:
             return scan_func()
         except Exception as e:
@@ -124,13 +139,13 @@ class ToolingScanner:
             return []  # Return empty list on error
 
     def scan_extended(self, parallel: bool = True) -> ExtendedScanResult:
-        """Scan all components plus Phase 6 extended metadata.
+        """Scan all core components plus Phase 6 extended metadata.
 
         Args:
             parallel: If True, run scanners in parallel (faster).
 
         Returns:
-            ExtendedScanResult with core components and extended metadata
+            The extended scan result with core components and Phase 6 metrics.
         """
         # Get core scan result
         core_result = self.scan_all(parallel=parallel)
@@ -193,7 +208,7 @@ class ToolingScanner:
         )
 
     def _detect_claude_home(self) -> Path:
-        """Auto-detect ~/.claude directory"""
+        """Auto-detect the Claude home directory (`~/.claude`)."""
         claude_home = Path.home() / ".claude"
 
         if not claude_home.exists():

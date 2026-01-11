@@ -1,4 +1,4 @@
-"""Session Analytics Scanner - extracts metrics from ~/.claude/data/sessions/*.json"""
+"""Session analytics scanner - extracts metrics from session JSON files."""
 
 import json
 import os
@@ -11,7 +11,7 @@ from ..models import SessionMetrics
 
 
 class SessionAnalyticsScanner:
-    """Scans session JSON files for engagement and activity metrics"""
+    """Scan session JSON files for engagement and activity metrics."""
 
     def __init__(self, sessions_dir: Optional[Path] = None):
         self.sessions_dir = sessions_dir or (
@@ -19,7 +19,7 @@ class SessionAnalyticsScanner:
         )
 
     def scan(self) -> Optional[SessionMetrics]:
-        """Scan session files and extract analytics"""
+        """Scan session files and extract analytics."""
         if not self.sessions_dir.exists():
             return None
 

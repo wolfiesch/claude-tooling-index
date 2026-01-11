@@ -49,7 +49,9 @@ class MultiToolingScanner:
 
         merged = self._merge_results(claude_result, codex_result)
         merged.scan_time = scan_time
-        merged.errors = (claude_result.errors or []) + (codex_result.errors or []) + errors
+        merged.errors = (
+            (claude_result.errors or []) + (codex_result.errors or []) + errors
+        )
         return merged
 
     def _scan_claude(self, parallel: bool) -> ScanResult:
@@ -83,4 +85,3 @@ class MultiToolingScanner:
             mcps=(a.mcps or []) + (b.mcps or []),
             binaries=(a.binaries or []) + (b.binaries or []),
         )
-

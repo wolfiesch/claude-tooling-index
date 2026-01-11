@@ -1,6 +1,6 @@
-"""Claude Code Tooling Index
-==========================
-Catalog and analyze Claude Code components with usage analytics and TUI dashboard.
+"""Claude Tooling Index.
+
+Catalog and analyze Claude Code tooling with usage analytics and a TUI dashboard.
 """
 
 __version__ = "1.0.0"

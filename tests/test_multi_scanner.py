@@ -59,17 +59,20 @@ command = "python3"
         # Add skill to Claude
         claude_skill_dir = mock_claude_home / "skills" / "claude-skill"
         claude_skill_dir.mkdir(parents=True)
-        (claude_skill_dir / "SKILL.md").write_text("---\nname: claude-skill\n---\n# Skill\n")
+        (claude_skill_dir / "SKILL.md").write_text(
+            "---\nname: claude-skill\n---\n# Skill\n"
+        )
 
         # Add skill to Codex
         codex_skill_dir = mock_codex_home / "skills" / "codex-skill"
         codex_skill_dir.mkdir(parents=True)
-        (codex_skill_dir / "SKILL.md").write_text("---\nname: codex-skill\n---\n# Skill\n")
+        (codex_skill_dir / "SKILL.md").write_text(
+            "---\nname: codex-skill\n---\n# Skill\n"
+        )
         (mock_codex_home / "config.toml").write_text("")
 
         scanner = MultiToolingScanner(
-            claude_home=mock_claude_home,
-            codex_home=mock_codex_home
+            claude_home=mock_claude_home, codex_home=mock_codex_home
         )
         result = scanner.scan_all(platform="all")
 
@@ -81,7 +84,9 @@ command = "python3"
         names = {s.name for s in result.skills}
         assert names == {"claude-skill", "codex-skill"}
 
-    def test_scan_all_gracefully_handles_empty_claude(self, mock_codex_home: Path, tmp_path: Path):
+    def test_scan_all_gracefully_handles_empty_claude(
+        self, mock_codex_home: Path, tmp_path: Path
+    ):
         # Create empty Claude home (no skills)
         empty_claude = tmp_path / ".claude"
         empty_claude.mkdir()
@@ -96,12 +101,13 @@ command = "python3"
         # Add skill to Codex
         codex_skill_dir = mock_codex_home / "skills" / "codex-skill"
         codex_skill_dir.mkdir(parents=True)
-        (codex_skill_dir / "SKILL.md").write_text("---\nname: codex-skill\n---\n# Skill\n")
+        (codex_skill_dir / "SKILL.md").write_text(
+            "---\nname: codex-skill\n---\n# Skill\n"
+        )
         (mock_codex_home / "config.toml").write_text("")
 
         scanner = MultiToolingScanner(
-            claude_home=empty_claude,
-            codex_home=mock_codex_home
+            claude_home=empty_claude, codex_home=mock_codex_home
         )
         result = scanner.scan_all(platform="all")
 
@@ -112,7 +118,9 @@ command = "python3"
         assert result.skills[0].platform == "codex"
         assert result.skills[0].name == "codex-skill"
 
-    def test_scan_all_gracefully_handles_empty_codex(self, mock_claude_home: Path, tmp_path: Path):
+    def test_scan_all_gracefully_handles_empty_codex(
+        self, mock_claude_home: Path, tmp_path: Path
+    ):
         # Create empty Codex home (no components)
         empty_codex = tmp_path / ".codex"
         empty_codex.mkdir()
@@ -125,8 +133,7 @@ command = "python3"
         (skill_dir / "SKILL.md").write_text("---\nname: claude-skill\n---\n# Skill\n")
 
         scanner = MultiToolingScanner(
-            claude_home=mock_claude_home,
-            codex_home=empty_codex
+            claude_home=mock_claude_home, codex_home=empty_codex
         )
         result = scanner.scan_all(platform="all")
 
@@ -141,8 +148,7 @@ command = "python3"
         (mock_codex_home / "config.toml").write_text("")
 
         scanner = MultiToolingScanner(
-            claude_home=mock_claude_home,
-            codex_home=mock_codex_home
+            claude_home=mock_claude_home, codex_home=mock_codex_home
         )
 
         result_parallel = scanner.scan_all(platform="all", parallel=True)
@@ -167,12 +173,20 @@ command = "python3"
 
         # Create mock results
         skill1 = SkillMetadata(
-            name="skill1", origin="in-house", status="active",
-            last_modified=datetime.now(), install_path=Path("/a"), platform="claude"
+            name="skill1",
+            origin="in-house",
+            status="active",
+            last_modified=datetime.now(),
+            install_path=Path("/a"),
+            platform="claude",
         )
         skill2 = SkillMetadata(
-            name="skill2", origin="in-house", status="active",
-            last_modified=datetime.now(), install_path=Path("/b"), platform="codex"
+            name="skill2",
+            origin="in-house",
+            status="active",
+            last_modified=datetime.now(),
+            install_path=Path("/b"),
+            platform="codex",
         )
 
         result_a = ScanResult(skills=[skill1])

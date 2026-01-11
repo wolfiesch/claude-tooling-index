@@ -131,7 +131,7 @@ env = { SECRET = "my-secret" }
         scanner = CodexMCPScanner(
             config_toml_path=sample_config_toml,
             platform="codex",
-            origin="custom-origin"
+            origin="custom-origin",
         )
         mcps = scanner.scan()
 

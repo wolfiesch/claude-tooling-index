@@ -1,4 +1,4 @@
-"""Scanner modules for different component types"""
+"""Scanner modules for different component types."""
 
 from .binaries import BinaryScanner
 from .commands import CommandScanner

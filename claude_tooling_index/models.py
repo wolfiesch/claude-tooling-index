@@ -1,5 +1,4 @@
-"""Data models for Claude Code components
-"""
+"""Data models for the tooling index."""
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -9,7 +8,7 @@ from typing import Dict, List, Optional
 
 @dataclass
 class ComponentMetadata:
-    """Base class for all component types"""
+    """Base class for all component types."""
 
     name: str
     origin: str  # "in-house" | "official" | "community" | "external"
@@ -27,7 +26,7 @@ class ComponentMetadata:
 
 @dataclass
 class SkillMetadata(ComponentMetadata):
-    """Metadata for a skill"""
+    """Metadata for a skill."""
 
     version: Optional[str] = None
     description: str = ""
@@ -43,7 +42,7 @@ class SkillMetadata(ComponentMetadata):
 
 @dataclass
 class PluginMetadata(ComponentMetadata):
-    """Metadata for a plugin"""
+    """Metadata for a plugin."""
 
     marketplace: str = ""
     version: str = ""
@@ -58,7 +57,7 @@ class PluginMetadata(ComponentMetadata):
 
 @dataclass
 class CommandMetadata(ComponentMetadata):
-    """Metadata for a command"""
+    """Metadata for a command."""
 
     description: str = ""
     from_plugin: Optional[str] = None  # Plugin name if provided by plugin
@@ -69,7 +68,7 @@ class CommandMetadata(ComponentMetadata):
 
 @dataclass
 class HookMetadata(ComponentMetadata):
-    """Metadata for a hook"""
+    """Metadata for a hook."""
 
     trigger: str = ""  # e.g., "post_tool_use", "session_start"
     language: str = ""  # "python", "cpp", "bash", etc.
@@ -81,7 +80,7 @@ class HookMetadata(ComponentMetadata):
 
 @dataclass
 class MCPMetadata(ComponentMetadata):
-    """Metadata for an MCP server"""
+    """Metadata for an MCP server."""
 
     command: str = ""
     args: List[str] = field(default_factory=list)
@@ -95,7 +94,7 @@ class MCPMetadata(ComponentMetadata):
 
 @dataclass
 class BinaryMetadata(ComponentMetadata):
-    """Metadata for a binary"""
+    """Metadata for a binary."""
 
     language: str = ""  # Detected from shebang or file analysis
     file_size: int = 0
@@ -107,7 +106,7 @@ class BinaryMetadata(ComponentMetadata):
 
 @dataclass
 class ScanResult:
-    """Result of scanning all components"""
+    """Result of scanning all components."""
 
     skills: List[SkillMetadata] = field(default_factory=list)
     plugins: List[PluginMetadata] = field(default_factory=list)
@@ -121,32 +120,32 @@ class ScanResult:
 
     @property
     def total_count(self) -> int:
-        """Total number of components scanned"""
+        """Total number of components scanned."""
         return (
-            len(self.skills) +
-            len(self.plugins) +
-            len(self.commands) +
-            len(self.hooks) +
-            len(self.mcps) +
-            len(self.binaries)
+            len(self.skills)
+            + len(self.plugins)
+            + len(self.commands)
+            + len(self.hooks)
+            + len(self.mcps)
+            + len(self.binaries)
         )
 
     @property
     def all_components(self) -> List[ComponentMetadata]:
-        """Get all components as a flat list"""
+        """Get all components as a flat list."""
         return (
-            self.skills +
-            self.plugins +
-            self.commands +
-            self.hooks +
-            self.mcps +
-            self.binaries
+            self.skills
+            + self.plugins
+            + self.commands
+            + self.hooks
+            + self.mcps
+            + self.binaries
         )
 
 
 @dataclass
 class InvocationRecord:
-    """Record of a component invocation"""
+    """Record of a component invocation."""
 
     timestamp: str
     session_id: str
@@ -162,7 +161,7 @@ class InvocationRecord:
 
 @dataclass
 class SkillUsage:
-    """Individual skill usage statistics from ~/.claude.json"""
+    """Individual skill usage statistics from `~/.claude.json`."""
 
     name: str
     usage_count: int
@@ -171,7 +170,7 @@ class SkillUsage:
 
 @dataclass
 class ProjectMetric:
-    """Per-project productivity and cost metrics from ~/.claude.json"""
+    """Per-project productivity and cost metrics from `~/.claude.json`."""
 
     path: str
     last_session_cost: Optional[float] = None
@@ -188,7 +187,7 @@ class ProjectMetric:
 
 @dataclass
 class UserSettingsMetadata:
-    """User settings and usage metrics from ~/.claude.json"""
+    """User settings and usage metrics from `~/.claude.json`."""
 
     total_startups: int = 0
     first_startup_date: Optional[datetime] = None
@@ -216,7 +215,7 @@ class UserSettingsMetadata:
 
 @dataclass
 class EventMetrics:
-    """Event queue analytics from ~/.claude/data/event_queue.jsonl"""
+    """Event queue analytics from `~/.claude/data/event_queue.jsonl`."""
 
     total_events: int = 0
     tool_frequency: Dict[str, int] = field(default_factory=dict)
@@ -230,7 +229,7 @@ class EventMetrics:
 
 @dataclass
 class InsightMetrics:
-    """Insights analytics from ~/.claude/data/insights.db"""
+    """Insights analytics from `~/.claude/data/insights.db`."""
 
     total_insights: int = 0
     by_category: Dict[str, int] = field(default_factory=dict)
@@ -243,7 +242,7 @@ class InsightMetrics:
 
 @dataclass
 class SessionMetrics:
-    """Session analytics from ~/.claude/data/sessions/"""
+    """Session analytics from `~/.claude/data/sessions/`."""
 
     total_sessions: int = 0
     prompts_per_session: float = 0.0
@@ -254,7 +253,7 @@ class SessionMetrics:
 
 @dataclass
 class TaskMetrics:
-    """Task/todo analytics from ~/.claude/todos/"""
+    """Task/todo analytics from `~/.claude/todos/`."""
 
     total_tasks: int = 0
     completed: int = 0
@@ -265,7 +264,7 @@ class TaskMetrics:
 
 @dataclass
 class TranscriptMetrics:
-    """Token economics and tool usage from transcript files"""
+    """Token economics and tool usage from transcript files."""
 
     total_transcripts: int = 0
     total_input_tokens: int = 0
@@ -279,7 +278,7 @@ class TranscriptMetrics:
 
 @dataclass
 class GrowthMetrics:
-    """L1-L5 progression metrics from agentic-growth framework"""
+    """L1-L5 progression metrics from agentic-growth framework."""
 
     current_level: str = "L1"
     total_edges: int = 0
@@ -291,7 +290,7 @@ class GrowthMetrics:
 
 @dataclass
 class ExtendedScanResult:
-    """Extended scan result including Phase 6 metadata"""
+    """Extended scan result including Phase 6 metadata."""
 
     # Core scan result
     core: ScanResult = field(default_factory=ScanResult)
@@ -309,5 +308,5 @@ class ExtendedScanResult:
 
     @property
     def total_count(self) -> int:
-        """Total component count from core scan"""
+        """Total component count from core scan."""
         return self.core.total_count

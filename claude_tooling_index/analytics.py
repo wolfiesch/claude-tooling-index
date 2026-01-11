@@ -1,4 +1,8 @@
-"""Analytics tracker - usage tracking and statistics"""
+"""Analytics tracker for tooling-index.
+
+This module provides a thin facade around `ToolingDatabase` for common analytics
+and tracking operations used by the CLI and TUI.
+"""
 
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -8,13 +12,17 @@ from .models import ScanResult
 
 
 class AnalyticsTracker:
-    """Tracks component usage and installation timeline"""
+    """Tracks component usage and installation timeline."""
 
     def __init__(self, db_path: Optional[Path] = None):
         self.db = ToolingDatabase(db_path)
 
     def update_components(self, scan_result: ScanResult):
-        """Update components from scan result"""
+        """Persist a scan result into the database.
+
+        Args:
+            scan_result: The scan output to store.
+        """
         self.db.update_components(scan_result)
 
     def track_invocation(
@@ -29,11 +37,12 @@ class AnalyticsTracker:
         """Record component usage.
 
         Args:
-            component: Component identifier in format "type:name" (e.g., "skill:gmail-gateway")
-            session_id: Session identifier
-            duration_ms: Execution time in milliseconds
-            success: Whether the invocation succeeded
-            error_message: Error message if invocation failed
+            component: Component identifier in the form `"type:name"`.
+            session_id: Session identifier for correlating invocations.
+            platform: Platform the component belongs to (for example, `"claude"`).
+            duration_ms: Execution time in milliseconds, if known.
+            success: Whether the invocation succeeded.
+            error_message: Error message if the invocation failed.
         """
         # Parse component string
         if ":" in component:
@@ -54,11 +63,25 @@ class AnalyticsTracker:
         )
 
     def get_usage_stats(self, days: int = 30) -> Dict[str, Any]:
-        """Get usage statistics for dashboard"""
+        """Get usage statistics for dashboard.
+
+        Args:
+            days: Lookback window in days.
+
+        Returns:
+            A dictionary of aggregated usage metrics.
+        """
         return self.db.get_usage_stats(days)
 
     def search_components(self, query: str):
-        """Full-text search for components"""
+        """Run a full-text search over components.
+
+        Args:
+            query: Search query string.
+
+        Returns:
+            Search results from the underlying database implementation.
+        """
         return self.db.search_components(query)
 
     def get_components(
@@ -68,11 +91,21 @@ class AnalyticsTracker:
         origin: Optional[str] = None,
         status: Optional[str] = None,
     ):
-        """Query components with filters"""
+        """Query components with optional filters.
+
+        Args:
+            platform: Limit results to a specific platform (for example, `"claude"`).
+            type: Limit results to a specific component type.
+            origin: Limit results to a specific origin.
+            status: Limit results to a specific status.
+
+        Returns:
+            A list of matching components from the database.
+        """
         return self.db.get_components(
             platform=platform, type=type, origin=origin, status=status
         )
 
     def close(self):
-        """Close database connection"""
+        """Close the underlying database connection."""
         self.db.close()

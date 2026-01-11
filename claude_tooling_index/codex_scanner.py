@@ -24,13 +24,24 @@ class CodexToolingScanner:
         self.mcps_scanner = CodexMCPScanner(self.codex_home / "config.toml")
 
     def scan_all(self, parallel: bool = True) -> ScanResult:
-        datetime.now()
+        """Scan all Codex components and return results.
+
+        Args:
+            parallel: If True, scan components in parallel using threads.
+
+        Returns:
+            ScanResult containing all discovered components.
+        """
         errors: List[str] = []
 
         if parallel:
             with ThreadPoolExecutor(max_workers=2) as executor:
-                skills_future = executor.submit(self._safe_scan, self.skills_scanner.scan, "skills", errors)
-                mcps_future = executor.submit(self._safe_scan, self.mcps_scanner.scan, "mcps", errors)
+                skills_future = executor.submit(
+                    self._safe_scan, self.skills_scanner.scan, "skills", errors
+                )
+                mcps_future = executor.submit(
+                    self._safe_scan, self.mcps_scanner.scan, "mcps", errors
+                )
 
                 result = ScanResult(
                     skills=skills_future.result(),

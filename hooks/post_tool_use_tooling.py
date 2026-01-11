@@ -22,8 +22,13 @@ def get_db_path() -> Path:
     return Path.home() / ".claude" / "data" / "tooling_index.db"
 
 
-def track_invocation(component_name: str, component_type: str,
-                     session_id: str, duration_ms: int, success: bool):
+def track_invocation(
+    component_name: str,
+    component_type: str,
+    session_id: str,
+    duration_ms: int,
+    success: bool,
+):
     """Track a component invocation in the database"""
     import sqlite3
 
@@ -38,7 +43,7 @@ def track_invocation(component_name: str, component_type: str,
         # Get component_id
         cursor.execute(
             "SELECT id FROM components WHERE name = ? AND type = ? LIMIT 1",
-            (component_name, component_type)
+            (component_name, component_type),
         )
         row = cursor.fetchone()
 
@@ -53,7 +58,7 @@ def track_invocation(component_name: str, component_type: str,
             """INSERT INTO invocations
                (component_id, session_id, timestamp, duration_ms, success)
                VALUES (?, ?, datetime('now'), ?, ?)""",
-            (component_id, session_id, duration_ms, 1 if success else 0)
+            (component_id, session_id, duration_ms, 1 if success else 0),
         )
 
         conn.commit()

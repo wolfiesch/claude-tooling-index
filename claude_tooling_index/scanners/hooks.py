@@ -1,4 +1,4 @@
-"""Hook scanner - extracts metadata from hook files"""
+"""Hook scanner - extracts metadata from hook files."""
 
 from datetime import datetime
 from pathlib import Path
@@ -8,13 +8,13 @@ from ..models import HookMetadata
 
 
 class HookScanner:
-    """Scans ~/.claude/hooks/ directory for hook files"""
+    """Scan `~/.claude/hooks/` for hook file metadata."""
 
     def __init__(self, hooks_dir: Path):
         self.hooks_dir = hooks_dir
 
     def scan(self) -> List[HookMetadata]:
-        """Scan all hooks in the hooks directory"""
+        """Scan all hooks in the hooks directory."""
         hooks = []
 
         if not self.hooks_dir.exists():
@@ -47,7 +47,7 @@ class HookScanner:
         return hooks
 
     def _scan_hook(self, hook_file: Path) -> HookMetadata:
-        """Scan a single hook file"""
+        """Scan a single hook file."""
         name = hook_file.name
 
         # Detect language from extension or shebang
@@ -81,7 +81,7 @@ class HookScanner:
         )
 
     def _detect_language(self, file_path: Path) -> str:
-        """Detect programming language from extension or shebang"""
+        """Detect programming language from extension or shebang."""
         # Check extension first
         ext = file_path.suffix
         if ext == ".py":

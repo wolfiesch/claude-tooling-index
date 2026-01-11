@@ -1,4 +1,4 @@
-"""Plugin scanner - extracts metadata from installed_plugins.json"""
+"""Plugin scanner - extracts metadata from `installed_plugins.json`."""
 
 import json
 from datetime import datetime
@@ -9,14 +9,14 @@ from ..models import PluginMetadata
 
 
 class PluginScanner:
-    """Scans ~/.claude/plugins/installed_plugins.json for plugin metadata"""
+    """Scan `installed_plugins.json` for plugin metadata."""
 
     def __init__(self, plugins_dir: Path):
         self.plugins_dir = plugins_dir
         self.installed_plugins_file = plugins_dir / "installed_plugins.json"
 
     def scan(self) -> List[PluginMetadata]:
-        """Scan installed plugins from installed_plugins.json"""
+        """Scan installed plugins from `installed_plugins.json`."""
         plugins = []
 
         if not self.installed_plugins_file.exists():
@@ -68,7 +68,7 @@ class PluginScanner:
     def _parse_plugin_entry(
         self, name: str, marketplace: str, entry: dict
     ) -> PluginMetadata:
-        """Parse a single plugin entry"""
+        """Parse a single plugin entry."""
         install_path_str = entry.get("installPath", "")
         install_path = Path(install_path_str).expanduser() if install_path_str else None
 
@@ -122,7 +122,7 @@ class PluginScanner:
         )
 
     def _detect_origin_from_marketplace(self, marketplace: str) -> str:
-        """Detect origin from marketplace name (heuristic)"""
+        """Detect origin from marketplace name (heuristic)."""
         if marketplace in ["claude-plugins-official", "claude-code-plugins"]:
             return "official"
         elif marketplace in [

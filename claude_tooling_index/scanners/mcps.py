@@ -1,4 +1,4 @@
-"""MCP scanner - extracts metadata from all MCP sources"""
+"""MCP scanner - extracts metadata from all MCP sources."""
 
 import json
 from datetime import datetime
@@ -9,7 +9,8 @@ from ..models import MCPMetadata
 
 
 class MCPScanner:
-    """Scans MCP server configurations from all sources:
+    """Scan MCP server configurations from all sources.
+
     1. User-level MCPs: ~/.claude.json -> mcpServers
     2. Project-specific MCPs: ~/.claude.json -> projects.<path>.mcpServers
     3. Plugin-provided MCPs: plugin.json -> mcpServers
@@ -23,7 +24,7 @@ class MCPScanner:
         self.plugins_cache = self.claude_home / "plugins" / "cache"
 
     def scan(self) -> List[MCPMetadata]:
-        """Scan MCP servers from all config locations"""
+        """Scan MCP servers from all config locations."""
         mcps = []
         seen_names = set()
 
@@ -45,7 +46,7 @@ class MCPScanner:
         return mcps
 
     def _scan_builtin_mcps(self, seen_names: set) -> List[MCPMetadata]:
-        """Detect built-in MCPs like claude-in-chrome"""
+        """Detect built-in MCPs like `claude-in-chrome`."""
         mcps = []
 
         # Check for Claude-in-Chrome extension
@@ -54,23 +55,27 @@ class MCPScanner:
             name = "claude-in-chrome"
             if name not in seen_names:
                 seen_names.add(name)
-                mcps.append(MCPMetadata(
-                    name=name,
-                    origin="official",
-                    status="active",
-                    last_modified=datetime.fromtimestamp(chrome_host.stat().st_mtime),
-                    install_path=chrome_host,
-                    command="chrome-extension",
-                    args=[],
-                    env_vars={},
-                    transport="native-messaging",
-                    git_remote=None,
-                ))
+                mcps.append(
+                    MCPMetadata(
+                        name=name,
+                        origin="official",
+                        status="active",
+                        last_modified=datetime.fromtimestamp(
+                            chrome_host.stat().st_mtime
+                        ),
+                        install_path=chrome_host,
+                        command="chrome-extension",
+                        args=[],
+                        env_vars={},
+                        transport="native-messaging",
+                        git_remote=None,
+                    )
+                )
 
         return mcps
 
     def _scan_user_mcps(self, seen_names: set) -> List[MCPMetadata]:
-        """Scan user-level MCPs from ~/.claude.json -> mcpServers"""
+        """Scan user-level MCPs from `~/.claude.json` -> `mcpServers`."""
         mcps = []
 
         if not self.claude_json_path.exists():
@@ -98,7 +103,7 @@ class MCPScanner:
         return mcps
 
     def _scan_project_mcps(self, seen_names: set) -> List[MCPMetadata]:
-        """Scan project-specific MCPs for ~/.claude from projects.<path>.mcpServers"""
+        """Scan project-specific MCPs from `projects.<path>.mcpServers`."""
         mcps = []
 
         if not self.claude_json_path.exists():
@@ -133,7 +138,7 @@ class MCPScanner:
         return mcps
 
     def _scan_plugin_mcps(self, seen_names: set) -> List[MCPMetadata]:
-        """Scan plugin-provided MCPs from plugin.json and .mcp.json files"""
+        """Scan plugin-provided MCPs from plugin.json and .mcp.json files."""
         mcps = []
 
         if not self.plugins_cache.exists():
@@ -207,7 +212,7 @@ class MCPScanner:
         return mcps
 
     def _scan_legacy_mcp_json(self, seen_names: set) -> List[MCPMetadata]:
-        """Scan legacy ~/.claude/mcp.json"""
+        """Scan legacy `~/.claude/mcp.json`."""
         mcps = []
 
         if not self.mcp_json_path.exists():
@@ -223,9 +228,7 @@ class MCPScanner:
                     continue
                 seen_names.add(name)
 
-                mcp = self._parse_mcp_config(
-                    name, config, self.mcp_json_path, "legacy"
-                )
+                mcp = self._parse_mcp_config(name, config, self.mcp_json_path, "legacy")
                 if mcp:
                     mcps.append(mcp)
 
@@ -234,8 +237,10 @@ class MCPScanner:
 
         return mcps
 
-    def _parse_mcp_json_file(self, mcp_json: Path, seen_names: set) -> List[MCPMetadata]:
-        """Parse a .mcp.json file for MCP definitions"""
+    def _parse_mcp_json_file(
+        self, mcp_json: Path, seen_names: set
+    ) -> List[MCPMetadata]:
+        """Parse a `.mcp.json` file for MCP definitions."""
         mcps = []
 
         try:
@@ -257,9 +262,7 @@ class MCPScanner:
                 plugin_root = mcp_json.parent
                 config = self._resolve_plugin_vars(config, plugin_root)
 
-                mcp = self._parse_mcp_config(
-                    full_name, config, mcp_json, "plugin"
-                )
+                mcp = self._parse_mcp_config(full_name, config, mcp_json, "plugin")
                 if mcp:
                     mcps.append(mcp)
 
@@ -269,17 +272,16 @@ class MCPScanner:
         return mcps
 
     def _resolve_plugin_vars(self, config: dict, plugin_root: Path) -> dict:
-        """Resolve ${CLAUDE_PLUGIN_ROOT} variables in config"""
+        """Resolve `${CLAUDE_PLUGIN_ROOT}` variables in config."""
         resolved = {}
         for key, value in config.items():
             if isinstance(value, str):
-                resolved[key] = value.replace(
-                    "${CLAUDE_PLUGIN_ROOT}", str(plugin_root)
-                )
+                resolved[key] = value.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))
             elif isinstance(value, list):
                 resolved[key] = [
                     v.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))
-                    if isinstance(v, str) else v
+                    if isinstance(v, str)
+                    else v
                     for v in value
                 ]
             elif isinstance(value, dict):
@@ -291,7 +293,7 @@ class MCPScanner:
     def _parse_mcp_config(
         self, name: str, config: dict, config_path: Path, source: str
     ) -> MCPMetadata:
-        """Parse a single MCP server configuration"""
+        """Parse a single MCP server configuration."""
         command = config.get("command", config.get("url", ""))
         args = config.get("args", [])
         env_vars = config.get("env", {})
@@ -332,7 +334,7 @@ class MCPScanner:
         )
 
     def _detect_origin(self, name: str, command: str, source: str) -> str:
-        """Detect MCP origin from name, command, and source"""
+        """Detect MCP origin from name, command, and source."""
         name_lower = name.lower()
         command_lower = command.lower() if command else ""
 

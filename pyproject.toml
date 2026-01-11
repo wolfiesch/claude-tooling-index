@@ -43,6 +43,7 @@ dev = [
     "ruff>=0.6.0",
     "black>=23.0.0",
     "mypy>=1.0.0",
+    "pre-commit>=3.5.0",
 ]
 
 [project.scripts]
@@ -65,6 +66,9 @@ target-version = ['py38']
 addopts = [
     "--strict-markers",
     "--strict-config",
+    "--cov=claude_tooling_index",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
 ]
 testpaths = ["tests"]
 
@@ -73,7 +77,7 @@ branch = true
 source = ["claude_tooling_index"]
 
 [tool.coverage.report]
-fail_under = 20
+fail_under = 85
 show_missing = true
 skip_empty = true
 
@@ -92,16 +96,30 @@ quiet = false
 
 [tool.ruff]
 target-version = "py38"
-line-length = 100
+line-length = 88
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "D"]
 ignore = [
-    "E501",  # Line too long (relaxed for readability)
+    "D100",  # Missing docstring in public module
+    "D101",  # Missing docstring in public class
+    "D102",  # Missing docstring in public method
+    "D103",  # Missing docstring in public function
+    "D104",  # Missing docstring in public package
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+    "D415",  # First line should end with punctuation
+    "E501",  # Line too long (handled separately)
 ]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 88
+
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["E501"]
+"tests/**" = ["D", "E501"]
 
 [tool.mypy]
 python_version = "3.8"

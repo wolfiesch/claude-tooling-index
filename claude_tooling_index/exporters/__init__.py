@@ -1,4 +1,4 @@
-"""Exporters for Claude Tooling Index"""
+"""Exporters for the tooling index."""
 
 from .json_exporter import JSONExporter
 from .markdown_exporter import MarkdownExporter

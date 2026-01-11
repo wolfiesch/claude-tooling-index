@@ -1,4 +1,4 @@
-"""Event Queue Scanner - extracts analytics from ~/.claude/data/event_queue.jsonl"""
+"""Event queue scanner - extracts analytics from `event_queue.jsonl`."""
 
 import json
 from collections import Counter
@@ -10,7 +10,7 @@ from ..models import EventMetrics
 
 
 class EventQueueScanner:
-    """Scans event_queue.jsonl for tool usage and session analytics"""
+    """Scan `event_queue.jsonl` for tool usage and session analytics."""
 
     def __init__(self, event_queue_path: Optional[Path] = None):
         self.event_queue_path = event_queue_path or (
@@ -18,7 +18,7 @@ class EventQueueScanner:
         )
 
     def scan(self) -> Optional[EventMetrics]:
-        """Scan event queue and extract analytics"""
+        """Scan event queue and extract analytics."""
         if not self.event_queue_path.exists():
             return None
 
@@ -83,7 +83,7 @@ class EventQueueScanner:
         session_ids: set,
         timestamps: list,
     ) -> None:
-        """Process a single event record"""
+        """Process a single event record."""
         # Extract event type
         event_type = event.get("hook_event_type", "unknown")
         event_type_counter[event_type] += 1
@@ -117,7 +117,7 @@ class EventQueueScanner:
                 tool_counter[tool_name] += 1
 
     def _extract_tool_name(self, payload: dict) -> Optional[str]:
-        """Extract tool name from event payload"""
+        """Extract tool name from event payload."""
         # Try different possible locations for tool name
         tool_name = payload.get("tool_name")
         if tool_name:

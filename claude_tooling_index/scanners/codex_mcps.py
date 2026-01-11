@@ -1,4 +1,4 @@
-"""Codex MCP scanner - extracts MCP servers from ~/.codex/config.toml"""
+"""Codex MCP scanner - extracts MCP servers from `~/.codex/config.toml`."""
 
 from __future__ import annotations
 
@@ -20,13 +20,20 @@ def _load_toml(path: Path) -> Dict[str, Any]:
         return tomllib.load(f)
 
 
-def _redact_env_vars(env: Dict[str, Any], *, keep_placeholders: bool = True) -> Dict[str, str]:
+def _redact_env_vars(
+    env: Dict[str, Any], *, keep_placeholders: bool = True
+) -> Dict[str, str]:
     redacted: Dict[str, str] = {}
     for key, value in (env or {}).items():
         if value is None:
             redacted[key] = ""
             continue
-        if keep_placeholders and isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+        if (
+            keep_placeholders
+            and isinstance(value, str)
+            and value.startswith("${")
+            and value.endswith("}")
+        ):
             redacted[key] = value
         else:
             redacted[key] = "<redacted>"
@@ -41,6 +48,11 @@ class CodexMCPScanner:
     redact_env: bool = True
 
     def scan(self) -> List[MCPMetadata]:
+        """Scan Codex MCP definitions from a `config.toml` file.
+
+        Returns:
+            A list of MCP metadata objects.
+        """
         mcps: List[MCPMetadata] = []
 
         if not self.config_toml_path.exists():
@@ -68,7 +80,11 @@ class CodexMCPScanner:
 
             env_vars: Dict[str, str] = {}
             if isinstance(env, dict):
-                env_vars = _redact_env_vars(env) if self.redact_env else {k: str(v) for k, v in env.items()}
+                env_vars = (
+                    _redact_env_vars(env)
+                    if self.redact_env
+                    else {k: str(v) for k, v in env.items()}
+                )
 
             mcps.append(
                 MCPMetadata(
@@ -87,4 +103,3 @@ class CodexMCPScanner:
             )
 
         return mcps
-

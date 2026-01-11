@@ -1,4 +1,4 @@
-"""Database schema and query layer for tooling index"""
+"""SQLite schema and query layer for the tooling index."""
 
 import json
 import sqlite3
@@ -10,17 +10,19 @@ from .models import ScanResult
 
 
 class ToolingDatabase:
-    """SQLite database for component metadata and analytics"""
+    """SQLite database for component metadata and analytics."""
 
     def __init__(self, db_path: Optional[Path] = None):
-        self.db_path = db_path or Path.home() / ".claude" / "data" / "tooling_index.db"
+        self.db_path = db_path or (
+            Path.home() / ".claude" / "data" / "tooling_index.db"
+        )
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(str(self.db_path))
         self.conn.row_factory = sqlite3.Row
         self._init_schema()
 
     def _init_schema(self):
-        """Initialize database schema"""
+        """Initialize database schema."""
         cursor = self.conn.cursor()
 
         self._ensure_components_schema(cursor)
@@ -164,7 +166,9 @@ class ToolingDatabase:
             )
 
             # Rebuild FTS rows from existing metadata (best-effort).
-            cursor.execute("SELECT id, platform, name, type, metadata_json FROM components")
+            cursor.execute(
+                "SELECT id, platform, name, type, metadata_json FROM components"
+            )
             for row in cursor.fetchall():
                 description = ""
                 try:
@@ -173,12 +177,14 @@ class ToolingDatabase:
                 except (json.JSONDecodeError, TypeError):
                     description = ""
 
+                keywords = f"{row['platform']} {row['type']}"
                 cursor.execute(
                     """
-                    INSERT OR REPLACE INTO components_fts (rowid, name, description, keywords)
+                    INSERT OR REPLACE INTO components_fts
+                    (rowid, name, description, keywords)
                     VALUES (?, ?, ?, ?)
                     """,
-                    (row["id"], row["name"], description, f"{row['platform']} {row['type']}"),
+                    (row["id"], row["name"], description, keywords),
                 )
 
             cursor.execute("COMMIT")
@@ -226,16 +232,18 @@ class ToolingDatabase:
             except (json.JSONDecodeError, TypeError):
                 description = ""
 
+            keywords = f"{row['platform']} {row['type']}"
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO components_fts (rowid, name, description, keywords)
+                INSERT OR REPLACE INTO components_fts
+                (rowid, name, description, keywords)
                 VALUES (?, ?, ?, ?)
                 """,
-                (row["id"], row["name"], description, f"{row['platform']} {row['type']}"),
+                (row["id"], row["name"], description, keywords),
             )
 
     def update_components(self, scan_result: ScanResult):
-        """Update components table from scan result"""
+        """Update components table from scan result."""
         cursor = self.conn.cursor()
         current_time = datetime.now()
 
@@ -270,7 +278,11 @@ class ToolingDatabase:
             # Check if component exists
             cursor.execute(
                 "SELECT id, first_seen FROM components WHERE platform = ? AND name = ? AND type = ?",
-                (getattr(component, "platform", "claude"), component.name, component.type),
+                (
+                    getattr(component, "platform", "claude"),
+                    component.name,
+                    component.type,
+                ),
             )
             existing = cursor.fetchone()
 
@@ -378,7 +390,7 @@ class ToolingDatabase:
         success: bool = True,
         error_message: Optional[str] = None,
     ):
-        """Record component invocation"""
+        """Record a component invocation."""
         cursor = self.conn.cursor()
 
         # Get component ID
@@ -414,7 +426,7 @@ class ToolingDatabase:
         self.conn.commit()
 
     def get_usage_stats(self, days: int = 30) -> Dict[str, Any]:
-        """Get usage statistics for dashboard"""
+        """Get usage statistics for dashboard."""
         cursor = self.conn.cursor()
 
         # Total invocations in time period
@@ -500,7 +512,7 @@ class ToolingDatabase:
         }
 
     def search_components(self, query: str) -> List[Dict[str, Any]]:
-        """Full-text search for components"""
+        """Full-text search for components."""
         cursor = self.conn.cursor()
 
         cursor.execute(
@@ -523,7 +535,7 @@ class ToolingDatabase:
         origin: Optional[str] = None,
         status: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Query components with filters"""
+        """Query components with filters."""
         cursor = self.conn.cursor()
 
         query = "SELECT * FROM components WHERE 1=1"
@@ -551,5 +563,5 @@ class ToolingDatabase:
         return [dict(row) for row in cursor.fetchall()]
 
     def close(self):
-        """Close database connection"""
+        """Close database connection."""
         self.conn.close()

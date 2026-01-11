@@ -10,10 +10,16 @@ Claude Tooling Index is a Python package that catalogs and analyzes Claude Code 
 
 ```bash
 # Install in development mode
-pip install -e .
+pip install -e ".[dev]"
+
+# Set up pre-commit hooks
+pre-commit install
 
 # Run tests
 pytest
+
+# Run linter
+ruff check .
 
 # Run TUI directly during development
 python3 cli.py tui
@@ -172,6 +178,14 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push to master/main
 
 - **Test job**: Runs pytest on Python 3.9, 3.10, 3.11, 3.12 (matrix strategy)
 - **Lint job**: Runs ruff linter on Python 3.12
+
+### Pre-commit Hooks
+
+Install with `pre-commit install`. Hooks run automatically before each commit:
+
+- **ruff**: Lint check with auto-fix
+- **ruff-format**: Code formatting
+- **pytest**: Run test suite
 
 ## Database Location
 

@@ -1,4 +1,4 @@
-"""User Settings Scanner - extracts metadata from ~/.claude.json"""
+"""User settings scanner - extracts metadata from `~/.claude.json`."""
 
 import json
 from datetime import datetime
@@ -9,13 +9,13 @@ from ..models import ProjectMetric, SkillUsage, UserSettingsMetadata
 
 
 class UserSettingsScanner:
-    """Scans ~/.claude.json for user settings and usage metrics"""
+    """Scan `~/.claude.json` for user settings and usage metrics."""
 
     def __init__(self, claude_json_path: Optional[Path] = None):
         self.claude_json_path = claude_json_path or (Path.home() / ".claude.json")
 
     def scan(self) -> Optional[UserSettingsMetadata]:
-        """Scan ~/.claude.json and extract user settings metadata"""
+        """Scan `~/.claude.json` and extract user settings metadata."""
         if not self.claude_json_path.exists():
             return None
 
@@ -28,7 +28,7 @@ class UserSettingsScanner:
         return self._parse_settings(data)
 
     def _parse_settings(self, data: dict) -> UserSettingsMetadata:
-        """Parse the claude.json data into UserSettingsMetadata"""
+        """Parse the `~/.claude.json` data into `UserSettingsMetadata`."""
         result = UserSettingsMetadata()
 
         # Basic activity metrics

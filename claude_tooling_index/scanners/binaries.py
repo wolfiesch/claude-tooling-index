@@ -1,4 +1,4 @@
-"""Binary scanner - extracts metadata from bin/ directory"""
+"""Binary scanner - extracts metadata from the bin/ directory."""
 
 import os
 from datetime import datetime
@@ -9,13 +9,13 @@ from ..models import BinaryMetadata
 
 
 class BinaryScanner:
-    """Scans ~/.claude/bin/ directory for binary files"""
+    """Scan `~/.claude/bin/` for binary files."""
 
     def __init__(self, bin_dir: Path):
         self.bin_dir = bin_dir
 
     def scan(self) -> List[BinaryMetadata]:
-        """Scan all binaries in the bin directory"""
+        """Scan all binaries in the bin directory."""
         binaries = []
 
         if not self.bin_dir.exists():
@@ -48,7 +48,7 @@ class BinaryScanner:
         return binaries
 
     def _scan_binary(self, binary_file: Path) -> BinaryMetadata:
-        """Scan a single binary file"""
+        """Scan a single binary file."""
         name = binary_file.name
 
         # Detect language
@@ -79,7 +79,7 @@ class BinaryScanner:
         )
 
     def _detect_language(self, file_path: Path) -> str:
-        """Detect programming language from extension or shebang"""
+        """Detect programming language from extension or shebang."""
         # Check extension first
         ext = file_path.suffix
         if ext == ".py":
@@ -103,7 +103,12 @@ class BinaryScanner:
                     return "compiled"
 
                 # Check for Mach-O magic number (macOS binary)
-                if first_bytes in [b"\xfe\xed\xfa\xce", b"\xfe\xed\xfa\xcf", b"\xcf\xfa\xed\xfe", b"\xce\xfa\xed\xfe"]:
+                if first_bytes in [
+                    b"\xfe\xed\xfa\xce",
+                    b"\xfe\xed\xfa\xcf",
+                    b"\xcf\xfa\xed\xfe",
+                    b"\xce\xfa\xed\xfe",
+                ]:
                     return "compiled"
 
                 # Try to read as text for shebang

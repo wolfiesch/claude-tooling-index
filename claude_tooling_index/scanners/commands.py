@@ -1,4 +1,4 @@
-"""Command scanner - extracts metadata from command .md files"""
+"""Command scanner - extracts metadata from command `.md` files."""
 
 import re
 from datetime import datetime
@@ -11,13 +11,13 @@ from ..models import CommandMetadata
 
 
 class CommandScanner:
-    """Scans ~/.claude/commands/ directory for command metadata"""
+    """Scan `~/.claude/commands/` for command metadata."""
 
     def __init__(self, commands_dir: Path):
         self.commands_dir = commands_dir
 
     def scan(self) -> List[CommandMetadata]:
-        """Scan all commands in the commands directory"""
+        """Scan all commands in the commands directory."""
         commands = []
 
         if not self.commands_dir.exists():
@@ -43,7 +43,7 @@ class CommandScanner:
         return commands
 
     def _scan_command(self, command_file: Path) -> CommandMetadata:
-        """Scan a single command file"""
+        """Scan a single command file."""
         content = command_file.read_text()
         frontmatter = self._extract_frontmatter(content)
 
@@ -68,7 +68,7 @@ class CommandScanner:
         )
 
     def _extract_frontmatter(self, content: str) -> Dict:
-        """Extract YAML frontmatter from command .md file"""
+        """Extract YAML frontmatter from a command `.md` file."""
         pattern = r"^---\s*\n(.*?)\n---\s*\n"
         match = re.match(pattern, content, re.DOTALL)
 

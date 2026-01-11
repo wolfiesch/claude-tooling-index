@@ -66,7 +66,9 @@ args = ["-m", "mcp_server"]
         assert result.mcps[0].name == "test-mcp"
         assert result.mcps[0].platform == "codex"
 
-    def test_scan_all_returns_empty_lists_for_unsupported_types(self, mock_codex_home: Path):
+    def test_scan_all_returns_empty_lists_for_unsupported_types(
+        self, mock_codex_home: Path
+    ):
         (mock_codex_home / "config.toml").write_text("")
 
         scanner = CodexToolingScanner(codex_home=mock_codex_home)

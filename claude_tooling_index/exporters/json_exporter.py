@@ -1,4 +1,8 @@
-"""JSON Exporter - Structured API export for tooling index"""
+"""JSON exporter for the tooling index.
+
+This exporter produces a structured JSON representation of scan results and
+component lists.
+"""
 
 import json
 from datetime import datetime
@@ -9,14 +13,21 @@ from ..models import ComponentMetadata, ScanResult
 
 
 class JSONExporter:
-    """Export scan results and components as structured JSON"""
+    """Export scan results and components as structured JSON."""
 
     def __init__(self, include_analytics: bool = True, pretty: bool = True):
         self.include_analytics = include_analytics
         self.pretty = pretty
 
     def export_scan_result(self, result: ScanResult) -> str:
-        """Export full scan result to JSON"""
+        """Export a full scan result to JSON.
+
+        Args:
+            result: Scan result to export.
+
+        Returns:
+            A JSON document as a string.
+        """
         data = {
             "version": "1.0.0",
             "generated_at": datetime.now().isoformat(),
@@ -45,7 +56,14 @@ class JSONExporter:
     def export_components(
         self, components: List[Union[ComponentMetadata, Dict[str, Any]]]
     ) -> str:
-        """Export a list of components to JSON"""
+        """Export a list of components to JSON.
+
+        Args:
+            components: Components (or already-serialized dicts) to export.
+
+        Returns:
+            A JSON document as a string.
+        """
         data = {
             "version": "1.0.0",
             "generated_at": datetime.now().isoformat(),
@@ -63,7 +81,12 @@ class JSONExporter:
         result: Union[ScanResult, List[ComponentMetadata]],
         output_path: Path,
     ):
-        """Export to a JSON file"""
+        """Export scan data to a JSON file.
+
+        Args:
+            result: Either a scan result or a list of components.
+            output_path: Destination file path.
+        """
         if isinstance(result, ScanResult):
             json_str = self.export_scan_result(result)
         else:
@@ -73,7 +96,7 @@ class JSONExporter:
             f.write(json_str)
 
     def _serialize_component(self, component: ComponentMetadata) -> Dict[str, Any]:
-        """Serialize a component to a dictionary"""
+        """Serialize a component to a dictionary."""
         data = {
             "name": component.name,
             "platform": getattr(component, "platform", "claude"),
@@ -149,7 +172,7 @@ class JSONExporter:
         return data
 
     def _to_json(self, data: Dict[str, Any]) -> str:
-        """Convert to JSON string"""
+        """Convert a Python object to a JSON string."""
         if self.pretty:
             return json.dumps(data, indent=2, default=str)
         return json.dumps(data, default=str)

@@ -1,4 +1,4 @@
-"""Transcript Scanner - extracts token economics and tool usage from JSONL files"""
+"""Transcript scanner - extracts token economics and tool usage from JSONL files."""
 
 import json
 import os
@@ -10,7 +10,7 @@ from ..models import TranscriptMetrics
 
 
 class TranscriptScanner:
-    """Scans project JSONL transcript files for analytics"""
+    """Scan project JSONL transcript files for analytics."""
 
     def __init__(self, projects_dir: Optional[Path] = None):
         self.projects_dir = projects_dir or (Path.home() / ".claude" / "projects")
@@ -77,7 +77,7 @@ class TranscriptScanner:
     def _process_file(
         self, jsonl_file: Path, tool_counter: Counter, model_counter: Counter
     ) -> dict:
-        """Process a single JSONL file and return token counts"""
+        """Process a single JSONL file and return token counts."""
         tokens = {"input": 0, "output": 0, "cache_read": 0, "cache_create": 0}
 
         try:
@@ -96,7 +96,7 @@ class TranscriptScanner:
     def _process_line(
         self, data: dict, tool_counter: Counter, model_counter: Counter, tokens: dict
     ):
-        """Process a single JSONL line"""
+        """Process a single JSONL line."""
         msg_type = data.get("type")
 
         if msg_type == "assistant" and "message" in data:

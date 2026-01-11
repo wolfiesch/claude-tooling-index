@@ -1,4 +1,4 @@
-"""Component List Widget - Filterable table of all components"""
+"""Component list widget - filterable table of all components."""
 
 from typing import Any, List, Optional
 
@@ -7,12 +7,12 @@ from textual.widgets import DataTable
 
 
 class ComponentList(DataTable):
-    """A filterable DataTable showing all components"""
+    """A filterable `DataTable` showing all components."""
 
     COMPONENT_TYPES = ["skill", "plugin", "command", "hook", "mcp", "binary"]
 
     class ComponentSelected(Message):
-        """Sent when a component is selected"""
+        """Sent when a component is selected."""
 
         def __init__(self, component: Any) -> None:
             self.component = component
@@ -27,13 +27,13 @@ class ComponentList(DataTable):
         self.platform_filter: Optional[str] = None
 
     def on_mount(self) -> None:
-        """Set up the table columns"""
+        """Set up the table columns."""
         self.add_columns("Name", "Platform", "Type", "Origin", "Status", "Version")
         self.cursor_type = "row"
         self.zebra_stripes = True
 
     def load_components(self, scan_result) -> None:
-        """Load all components from scan result"""
+        """Load all components from a scan result."""
         self.all_components = []
 
         # Collect all components with their type
@@ -57,27 +57,30 @@ class ComponentList(DataTable):
         self._refresh_table()
 
     def filter_by_text(self, text: str) -> None:
-        """Filter components by text search"""
+        """Filter components by text search."""
         self.current_filter = text.lower()
         self._apply_filters()
 
     def filter_by_type(self, component_type: Optional[str]) -> None:
-        """Filter by component type"""
+        """Filter by component type."""
         self.type_filter = component_type
         self._apply_filters()
 
     def filter_by_platform(self, platform: Optional[str]) -> None:
-        """Filter by platform (claude/codex)"""
+        """Filter by platform (`claude` / `codex`)."""
         self.platform_filter = platform
         self._apply_filters()
 
     def _apply_filters(self) -> None:
-        """Apply all active filters"""
+        """Apply all active filters."""
         self.filtered_components = []
 
         for comp_type, component in self.all_components:
             # Platform filter
-            if self.platform_filter and getattr(component, "platform", "claude") != self.platform_filter:
+            if (
+                self.platform_filter
+                and getattr(component, "platform", "claude") != self.platform_filter
+            ):
                 continue
 
             # Type filter
@@ -86,7 +89,10 @@ class ComponentList(DataTable):
 
             # Text filter
             if self.current_filter:
-                searchable = f"{getattr(component, 'platform', 'claude')} {component.name} {getattr(component, 'description', '')}".lower()
+                searchable = (
+                    f"{getattr(component, 'platform', 'claude')} "
+                    f"{component.name} {getattr(component, 'description', '')}"
+                ).lower()
                 if self.current_filter not in searchable:
                     continue
 
@@ -95,7 +101,7 @@ class ComponentList(DataTable):
         self._refresh_table()
 
     def _refresh_table(self) -> None:
-        """Refresh the table with current filtered data"""
+        """Refresh the table with current filtered data."""
         self.clear()
 
         for idx, (comp_type, component) in enumerate(self.filtered_components):
@@ -104,7 +110,7 @@ class ComponentList(DataTable):
             origin = getattr(component, "origin", "unknown")
             platform = getattr(component, "platform", "claude")
 
-            # Use index to ensure unique keys (same name can exist in multiple marketplaces)
+            # Use index to ensure unique keys (same name can exist across platforms).
             self.add_row(
                 component.name,
                 platform,
@@ -116,7 +122,7 @@ class ComponentList(DataTable):
             )
 
     def _format_status(self, status: str) -> str:
-        """Format status with emoji"""
+        """Format status with an emoji."""
         status_map = {
             "active": "● Active",
             "disabled": "○ Disabled",
@@ -126,7 +132,7 @@ class ComponentList(DataTable):
         return status_map.get(status, status)
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Handle row selection"""
+        """Handle row selection."""
         if event.row_key:
             key = str(event.row_key.value)
             # Key format: "{idx}:{comp_type}:{component.name}"
@@ -139,7 +145,9 @@ class ComponentList(DataTable):
                 pass
 
     def get_selected_component(self) -> Optional[Any]:
-        """Get the currently selected component"""
-        if self.cursor_row is not None and self.cursor_row < len(self.filtered_components):
+        """Get the currently selected component."""
+        if self.cursor_row is not None and self.cursor_row < len(
+            self.filtered_components
+        ):
             return self.filtered_components[self.cursor_row][1]
         return None
