@@ -78,6 +78,10 @@ class DetailView(VerticalScroll):
         if version:
             info_table.add_row("Version:", version)
 
+        platform = getattr(component, "platform", None)
+        if platform:
+            info_table.add_row("Platform:", platform)
+
         origin = getattr(component, "origin", None)
         if origin:
             info_table.add_row("Origin:", origin)

@@ -124,8 +124,10 @@ class PerformanceMetricsExtractor:
 class SkillScanner:
     """Scans ~/.claude/skills/ directory for skill metadata"""
 
-    def __init__(self, skills_dir: Path):
+    def __init__(self, skills_dir: Path, platform: str = "claude", origin: str = "in-house"):
         self.skills_dir = skills_dir
+        self.platform = platform
+        self.origin = origin
         self.perf_extractor = PerformanceMetricsExtractor()
 
     def scan(self) -> List[SkillMetadata]:
@@ -162,6 +164,7 @@ class SkillScanner:
                         status="error",
                         last_modified=datetime.now(),
                         install_path=skill_path,
+                        platform=self.platform,
                         error_message=str(e),
                     )
                     skills.append(error_skill)
@@ -197,7 +200,7 @@ class SkillScanner:
         last_modified = datetime.fromtimestamp(skill_md.stat().st_mtime)
 
         # Detect origin (will be refined by OriginDetector later)
-        origin = "in-house"  # Default for skills in ~/.claude/skills/
+        origin = self.origin
 
         status = "disabled" if is_disabled else "active"
 
@@ -207,6 +210,7 @@ class SkillScanner:
             status=status,
             last_modified=last_modified,
             install_path=skill_path,
+            platform=self.platform,
             version=version,
             description=description,
             file_count=file_count,

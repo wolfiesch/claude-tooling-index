@@ -35,7 +35,9 @@ class MarkdownExporter:
         lines = []
 
         # Header
-        lines.append("# Claude Code Tooling Index")
+        platforms = sorted({getattr(c, "platform", "claude") for c in result.all_components}) if result.total_count else ["claude"]
+        header = "Claude Code Tooling Index" if platforms == ["claude"] else "Tooling Index (Claude + Codex)"
+        lines.append(f"# {header}")
         lines.append("")
         lines.append(f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*")
         lines.append("")
@@ -134,15 +136,16 @@ class MarkdownExporter:
     def _format_skills_table(self, skills: List[SkillMetadata]) -> List[str]:
         """Format skills as a table"""
         lines = []
-        lines.append("| Name | Version | Status | Files | Lines | Description |")
-        lines.append("|------|---------|--------|-------|-------|-------------|")
+        lines.append("| Name | Platform | Version | Status | Files | Lines | Description |")
+        lines.append("|------|----------|---------|--------|-------|-------|-------------|")
 
         for skill in sorted(skills, key=lambda s: s.name.lower()):
             version = skill.version or "-"
             status = self._status_badge(skill.status)
+            platform = getattr(skill, "platform", "claude")
             desc = (skill.description[:50] + "...") if len(skill.description) > 50 else skill.description
             lines.append(
-                f"| {skill.name} | {version} | {status} | {skill.file_count} | {skill.total_lines} | {desc} |"
+                f"| {skill.name} | {platform} | {version} | {status} | {skill.file_count} | {skill.total_lines} | {desc} |"
             )
 
         return lines
@@ -158,6 +161,7 @@ class MarkdownExporter:
             lines.append("")
 
         lines.append(f"- **Version:** {skill.version or 'N/A'}")
+        lines.append(f"- **Platform:** {getattr(skill, 'platform', 'claude')}")
         lines.append(f"- **Status:** {skill.status}")
         lines.append(f"- **Origin:** {skill.origin}")
         lines.append(f"- **Files:** {skill.file_count}")
@@ -186,13 +190,14 @@ class MarkdownExporter:
     def _format_plugins_table(self, plugins: List[PluginMetadata]) -> List[str]:
         """Format plugins as a table"""
         lines = []
-        lines.append("| Name | Version | Marketplace | Origin | Status |")
-        lines.append("|------|---------|-------------|--------|--------|")
+        lines.append("| Name | Platform | Version | Marketplace | Origin | Status |")
+        lines.append("|------|----------|---------|-------------|--------|--------|")
 
         for plugin in sorted(plugins, key=lambda p: p.name.lower()):
             status = self._status_badge(plugin.status)
+            platform = getattr(plugin, "platform", "claude")
             lines.append(
-                f"| {plugin.name} | {plugin.version} | {plugin.marketplace} | {plugin.origin} | {status} |"
+                f"| {plugin.name} | {platform} | {plugin.version} | {plugin.marketplace} | {plugin.origin} | {status} |"
             )
 
         return lines
@@ -200,27 +205,29 @@ class MarkdownExporter:
     def _format_commands_table(self, commands: List[CommandMetadata]) -> List[str]:
         """Format commands as a table"""
         lines = []
-        lines.append("| Command | Description | Origin | Status |")
-        lines.append("|---------|-------------|--------|--------|")
+        lines.append("| Command | Platform | Description | Origin | Status |")
+        lines.append("|---------|----------|-------------|--------|--------|")
 
         for cmd in sorted(commands, key=lambda c: c.name.lower()):
             status = self._status_badge(cmd.status)
+            platform = getattr(cmd, "platform", "claude")
             desc = (cmd.description[:60] + "...") if len(cmd.description) > 60 else cmd.description
-            lines.append(f"| /{cmd.name} | {desc} | {cmd.origin} | {status} |")
+            lines.append(f"| /{cmd.name} | {platform} | {desc} | {cmd.origin} | {status} |")
 
         return lines
 
     def _format_hooks_table(self, hooks: List[HookMetadata]) -> List[str]:
         """Format hooks as a table"""
         lines = []
-        lines.append("| Name | Trigger | Language | Size | Status |")
-        lines.append("|------|---------|----------|------|--------|")
+        lines.append("| Name | Platform | Trigger | Language | Size | Status |")
+        lines.append("|------|----------|---------|----------|------|--------|")
 
         for hook in sorted(hooks, key=lambda h: h.name.lower()):
             status = self._status_badge(hook.status)
             size = self._format_size(hook.file_size)
+            platform = getattr(hook, "platform", "claude")
             lines.append(
-                f"| {hook.name} | {hook.trigger} | {hook.language} | {size} | {status} |"
+                f"| {hook.name} | {platform} | {hook.trigger} | {hook.language} | {size} | {status} |"
             )
 
         return lines
@@ -228,14 +235,15 @@ class MarkdownExporter:
     def _format_mcps_table(self, mcps: List[MCPMetadata]) -> List[str]:
         """Format MCPs as a table"""
         lines = []
-        lines.append("| Name | Command | Transport | Origin | Status |")
-        lines.append("|------|---------|-----------|--------|--------|")
+        lines.append("| Name | Platform | Command | Transport | Origin | Status |")
+        lines.append("|------|----------|---------|-----------|--------|--------|")
 
         for mcp in sorted(mcps, key=lambda m: m.name.lower()):
             status = self._status_badge(mcp.status)
             cmd = mcp.command[:30] + "..." if len(mcp.command) > 30 else mcp.command
+            platform = getattr(mcp, "platform", "claude")
             lines.append(
-                f"| {mcp.name} | `{cmd}` | {mcp.transport} | {mcp.origin} | {status} |"
+                f"| {mcp.name} | {platform} | `{cmd}` | {mcp.transport} | {mcp.origin} | {status} |"
             )
 
         return lines
@@ -243,15 +251,16 @@ class MarkdownExporter:
     def _format_binaries_table(self, binaries: List[BinaryMetadata]) -> List[str]:
         """Format binaries as a table"""
         lines = []
-        lines.append("| Name | Language | Size | Executable | Status |")
-        lines.append("|------|----------|------|------------|--------|")
+        lines.append("| Name | Platform | Language | Size | Executable | Status |")
+        lines.append("|------|----------|----------|------|------------|--------|")
 
         for binary in sorted(binaries, key=lambda b: b.name.lower()):
             status = self._status_badge(binary.status)
             size = self._format_size(binary.file_size)
             exec_status = "Yes" if binary.is_executable else "No"
+            platform = getattr(binary, "platform", "claude")
             lines.append(
-                f"| {binary.name} | {binary.language} | {size} | {exec_status} | {status} |"
+                f"| {binary.name} | {platform} | {binary.language} | {size} | {exec_status} | {status} |"
             )
 
         return lines

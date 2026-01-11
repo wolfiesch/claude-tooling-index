@@ -23,10 +23,11 @@ class ComponentList(DataTable):
         self.filtered_components: List[Any] = []
         self.current_filter: str = ""
         self.type_filter: Optional[str] = None
+        self.platform_filter: Optional[str] = None
 
     def on_mount(self) -> None:
         """Set up the table columns"""
-        self.add_columns("Name", "Type", "Origin", "Status", "Version")
+        self.add_columns("Name", "Platform", "Type", "Origin", "Status", "Version")
         self.cursor_type = "row"
         self.zebra_stripes = True
 
@@ -64,18 +65,27 @@ class ComponentList(DataTable):
         self.type_filter = component_type
         self._apply_filters()
 
+    def filter_by_platform(self, platform: Optional[str]) -> None:
+        """Filter by platform (claude/codex)"""
+        self.platform_filter = platform
+        self._apply_filters()
+
     def _apply_filters(self) -> None:
         """Apply all active filters"""
         self.filtered_components = []
 
         for comp_type, component in self.all_components:
+            # Platform filter
+            if self.platform_filter and getattr(component, "platform", "claude") != self.platform_filter:
+                continue
+
             # Type filter
             if self.type_filter and comp_type != self.type_filter:
                 continue
 
             # Text filter
             if self.current_filter:
-                searchable = f"{component.name} {getattr(component, 'description', '')}".lower()
+                searchable = f"{getattr(component, 'platform', 'claude')} {component.name} {getattr(component, 'description', '')}".lower()
                 if self.current_filter not in searchable:
                     continue
 
@@ -91,10 +101,12 @@ class ComponentList(DataTable):
             status = self._format_status(component.status)
             version = getattr(component, "version", "-") or "-"
             origin = getattr(component, "origin", "unknown")
+            platform = getattr(component, "platform", "claude")
 
             # Use index to ensure unique keys (same name can exist in multiple marketplaces)
             self.add_row(
                 component.name,
+                platform,
                 comp_type,
                 origin,
                 status,

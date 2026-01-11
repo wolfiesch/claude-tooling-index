@@ -13,16 +13,27 @@ def cli():
 
 
 @cli.command()
+@click.option(
+    "--platform",
+    type=click.Choice(["claude", "codex", "all"], case_sensitive=False),
+    default="claude",
+    show_default=True,
+    help="Which platform(s) to scan",
+)
+@click.option("--claude-home", type=click.Path(path_type=Path), help="Override Claude home (default: ~/.claude)")
+@click.option("--codex-home", type=click.Path(path_type=Path), help="Override Codex home (default: ~/.codex)")
 @click.option("--parallel/--sequential", default=True, help="Run scanners in parallel")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
 @click.option("--no-db", is_flag=True, help="Skip database update")
-def scan(parallel, verbose, no_db):
-    """Scan ~/.claude directory and display results"""
+def scan(platform, claude_home, codex_home, parallel, verbose, no_db):
+    """Scan platform tooling directories and display results"""
     try:
-        scanner = ToolingScanner()
-        click.echo("🔍 Scanning ~/.claude directory...")
+        from claude_tooling_index.multi_scanner import MultiToolingScanner
 
-        result = scanner.scan_all(parallel=parallel)
+        scanner = MultiToolingScanner(claude_home=claude_home, codex_home=codex_home)
+        click.echo(f"🔍 Scanning ({platform})...")
+
+        result = scanner.scan_all(platform=platform, parallel=parallel)
 
         # Update database
         if not no_db:
@@ -40,6 +51,15 @@ def scan(parallel, verbose, no_db):
         click.echo(f"   Hooks: {len(result.hooks)}")
         click.echo(f"   MCPs: {len(result.mcps)}")
         click.echo(f"   Binaries: {len(result.binaries)}")
+
+        if platform.lower() == "all":
+            by_platform = {}
+            for c in result.all_components:
+                by_platform[getattr(c, "platform", "claude")] = by_platform.get(getattr(c, "platform", "claude"), 0) + 1
+            click.echo("")
+            click.echo("   By platform:")
+            for p in sorted(by_platform.keys()):
+                click.echo(f"     - {p}: {by_platform[p]}")
 
         if result.errors:
             click.echo(f"\n⚠️  Errors encountered:")
@@ -293,28 +313,36 @@ def _show_extended_stats():
 
 
 @cli.command()
+@click.option(
+    "--platform",
+    type=click.Choice(["claude", "codex"], case_sensitive=False),
+    help="Filter by platform",
+)
 @click.option("--type", help="Filter by component type")
 @click.option("--origin", help="Filter by origin")
 @click.option("--status", help="Filter by status")
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
-def list(type, origin, status, output_json):
+def list(platform, type, origin, status, output_json):
     """List all components from database"""
     try:
         from claude_tooling_index.analytics import AnalyticsTracker
         import json
 
         tracker = AnalyticsTracker()
-        components = tracker.get_components(type=type, origin=origin, status=status)
+        components = tracker.get_components(platform=platform, type=type, origin=origin, status=status)
 
         if output_json:
             click.echo(json.dumps(components, indent=2, default=str))
         else:
             click.echo(f"📋 Components ({len(components)} found)")
-            click.echo(f"\n{'Name':<30} {'Type':<10} {'Origin':<12} {'Status':<10}")
-            click.echo("="*65)
+            click.echo(f"\n{'Name':<30} {'Platform':<8} {'Type':<10} {'Origin':<12} {'Status':<10}")
+            click.echo("="*75)
             for component in components:
                 name = component['name'][:28]
-                click.echo(f"{name:<30} {component['type']:<10} {component['origin']:<12} {component['status']:<10}")
+                platform = component.get("platform", "claude")
+                click.echo(
+                    f"{name:<30} {platform:<8} {component['type']:<10} {component['origin']:<12} {component['status']:<10}"
+                )
 
         tracker.close()
 
@@ -325,14 +353,22 @@ def list(type, origin, status, output_json):
 
 @cli.command()
 @click.argument("query")
+@click.option(
+    "--platform",
+    type=click.Choice(["claude", "codex"], case_sensitive=False),
+    help="Filter by platform",
+)
 @click.option("--type", help="Filter by component type")
-def search(query, type):
+def search(query, platform, type):
     """Search components by name or description"""
     try:
         from claude_tooling_index.analytics import AnalyticsTracker
 
         tracker = AnalyticsTracker()
         results = tracker.search_components(query)
+
+        if platform:
+            results = [r for r in results if r.get("platform") == platform]
 
         # Filter by type if specified
         if type:
@@ -342,11 +378,14 @@ def search(query, type):
             click.echo(f"🔍 No components found matching '{query}'")
         else:
             click.echo(f"🔍 Found {len(results)} components matching '{query}'")
-            click.echo(f"\n{'Name':<30} {'Type':<10} {'Origin':<12} {'Status':<10}")
-            click.echo("="*65)
+            click.echo(f"\n{'Name':<30} {'Platform':<8} {'Type':<10} {'Origin':<12} {'Status':<10}")
+            click.echo("="*75)
             for component in results:
                 name = component['name'][:28]
-                click.echo(f"{name:<30} {component['type']:<10} {component['origin']:<12} {component['status']:<10}")
+                platform = component.get("platform", "claude")
+                click.echo(
+                    f"{name:<30} {platform:<8} {component['type']:<10} {component['origin']:<12} {component['status']:<10}"
+                )
 
         tracker.close()
 
@@ -356,12 +395,21 @@ def search(query, type):
 
 
 @cli.command()
-def tui():
+@click.option(
+    "--platform",
+    type=click.Choice(["claude", "codex", "all"], case_sensitive=False),
+    default="claude",
+    show_default=True,
+    help="Which platform(s) to show",
+)
+@click.option("--claude-home", type=click.Path(path_type=Path), help="Override Claude home (default: ~/.claude)")
+@click.option("--codex-home", type=click.Path(path_type=Path), help="Override Codex home (default: ~/.codex)")
+def tui(platform, claude_home, codex_home):
     """Launch interactive TUI dashboard"""
     try:
         from claude_tooling_index.tui import ToolingIndexTUI
 
-        app = ToolingIndexTUI()
+        app = ToolingIndexTUI(platform=platform, claude_home=claude_home, codex_home=codex_home)
         app.run()
 
     except ImportError as e:
@@ -377,17 +425,26 @@ def tui():
 @click.option("--format", "output_format", type=click.Choice(["json", "markdown"]), default="markdown", help="Export format")
 @click.option("--output", "-o", type=click.Path(), help="Output file path")
 @click.option("--include-disabled/--no-disabled", default=True, help="Include disabled components")
-def export(output_format, output, include_disabled):
+@click.option(
+    "--platform",
+    type=click.Choice(["claude", "codex", "all"], case_sensitive=False),
+    default="claude",
+    show_default=True,
+    help="Which platform(s) to export",
+)
+@click.option("--claude-home", type=click.Path(path_type=Path), help="Override Claude home (default: ~/.claude)")
+@click.option("--codex-home", type=click.Path(path_type=Path), help="Override Codex home (default: ~/.codex)")
+def export(output_format, output, include_disabled, platform, claude_home, codex_home):
     """Export tooling index to JSON or Markdown"""
     try:
-        from claude_tooling_index.scanner import ToolingScanner
+        from claude_tooling_index.multi_scanner import MultiToolingScanner
         from claude_tooling_index.exporters import JSONExporter, MarkdownExporter
         from pathlib import Path
 
-        click.echo(f"📦 Exporting to {output_format}...")
+        click.echo(f"📦 Exporting ({platform}) to {output_format}...")
 
-        scanner = ToolingScanner()
-        result = scanner.scan_all()
+        scanner = MultiToolingScanner(claude_home=claude_home, codex_home=codex_home)
+        result = scanner.scan_all(platform=platform)
 
         if output_format == "json":
             exporter = JSONExporter()
